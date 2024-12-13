@@ -1,17 +1,25 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 
-class SegundaSubseccion extends StatelessWidget {
-  final int? evaluacionId;
+class SegundaSubseccion extends StatefulWidget {
   final Future<void> Function(String, int) onEventoSeleccionado;
-  final VoidCallback onContinue; // Añadido
+  final VoidCallback onContinue;
+  final int? selectedEventoId;
 
-  // Constructor actualizado
-  SegundaSubseccion({
+  const SegundaSubseccion({
     super.key,
-    required this.evaluacionId,
     required this.onEventoSeleccionado,
-    required this.onContinue, // Añadido
+    required this.onContinue,
+    required this.selectedEventoId,
   });
+
+  @override
+  _SegundaSubseccionState createState() => _SegundaSubseccionState();
+}
+
+class _SegundaSubseccionState extends State<SegundaSubseccion> {
+  // No es necesario definir _selectedEventoId aquí
 
   // Lista de eventos con sus etiquetas e iconos
   final List<Map<String, dynamic>> eventos = [
@@ -87,24 +95,23 @@ class SegundaSubseccion extends StatelessWidget {
               mainAxisSpacing: 10,
               childAspectRatio: 1.5,
               children: eventos.map((evento) {
+                // Verificar si este evento está seleccionado
+                final isSelected = widget.selectedEventoId == evento['tipoEventoId'];
                 return GestureDetector(
                   onTap: () async {
-                    if (evaluacionId == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Por favor guarda los datos generales antes de seleccionar un evento.'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    await onEventoSeleccionado(evento['label'], evento['tipoEventoId']);
+                    // Simplemente llamar al callback sin validaciones
+                    await widget.onEventoSeleccionado(evento['label'], evento['tipoEventoId']);
+                    // Forzamos la reconstrucción para reflejar el cambio
+                    setState(() {});
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.yellow, width: 2),
+                      border: Border.all(
+                        color: isSelected ? Colors.blue : Colors.yellow,
+                        width: isSelected ? 3 : 2,
+                      ),
                       borderRadius: BorderRadius.circular(10),
-                      color: Colors.white,
+                      color: isSelected ? Colors.blue[100] : Colors.white,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -115,7 +122,7 @@ class SegundaSubseccion extends StatelessWidget {
                             padding: const EdgeInsets.all(8.0),
                             child: Image.asset(
                               evento['iconPath'],
-                              color: Colors.blue, // Color azul al ícono
+                              color: isSelected ? Colors.blue : Colors.blue,
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -126,10 +133,10 @@ class SegundaSubseccion extends StatelessWidget {
                           child: Text(
                             evento['label'],
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF002855),
+                              color: isSelected ? Colors.blue : Color(0xFF002855),
                             ),
                           ),
                         ),
@@ -141,19 +148,11 @@ class SegundaSubseccion extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Botón Continuar modificado
+          // Botón Continuar
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: evaluacionId == null 
-                  ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Por favor complete y guarde los datos generales primero'),
-                        ),
-                      );
-                    }
-                  : onContinue,
+              onPressed: widget.onContinue, // Sin validaciones adicionales
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.yellow[700],
                 foregroundColor: Colors.black,

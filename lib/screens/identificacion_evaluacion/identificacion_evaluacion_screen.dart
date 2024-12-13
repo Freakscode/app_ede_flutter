@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -9,7 +11,7 @@ import 'segunda_subseccion.dart';
 import '../identificacion_edificacion/identificacion_edificacion_screen.dart';
 
 class IdentificacionEvaluacionScreen extends StatefulWidget {
-  final int userId; // Publico ya que es final y está en una clase pública
+  final int userId; // Público ya que es final y está en una clase pública
 
   const IdentificacionEvaluacionScreen({super.key, required this.userId});
 
@@ -19,8 +21,8 @@ class IdentificacionEvaluacionScreen extends StatefulWidget {
       _IdentificacionEvaluacionScreenState();
 }
 
-class _IdentificacionEvaluacionScreenState
-    extends State<IdentificacionEvaluacionScreen> {
+// Eliminar _evaluacionId ya que no lo necesitamos más
+class _IdentificacionEvaluacionScreenState extends State<IdentificacionEvaluacionScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   int _currentIndex = 0;
   final _formKey = GlobalKey<FormState>();
@@ -32,10 +34,11 @@ class _IdentificacionEvaluacionScreenState
   final TextEditingController _idGrupoController = TextEditingController();
   final ValueNotifier<ImageProvider?> _firmaImageNotifier = ValueNotifier<ImageProvider?>(null);
   File? _firmaFile; // Para almacenar el archivo de la firma
+  int? _selectedEventoId;
 
-  // Para la firma, se puede implementar un widget de captura de firma
-
-  int? _evaluacionId; // Variable de estado para almacenar el ID de la evaluación
+  // Añadir variable para almacenar datos temporalmente
+  // ignore: unused_field
+  Map<String, dynamic>? _datosTemporales;
 
   @override
   void dispose() {
@@ -48,6 +51,7 @@ class _IdentificacionEvaluacionScreenState
     super.dispose();
   }
 
+  // Eliminar validación en _onTabTapped para permitir cambiar de pestaña libremente
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -103,59 +107,9 @@ class _IdentificacionEvaluacionScreenState
     }
   }
 
-  // Método actualizado para guardar evaluación
+  // Modificar _guardarEvaluacion para ya no cambiar de pestaña
   Future<void> _guardarEvaluacion() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        // Convertir firma a bytes si existe
-        final Uint8List? firmaBytes = await _fileToBytes(_firmaFile);
-
-        Map<String, dynamic> nuevaEvaluacion = {
-          'eventoId': DateTime.now().millisecondsSinceEpoch,
-          'usuario_id': widget.userId,
-          'fecha_inspeccion': _fechaController.text,
-          'hora': _horaController.text,
-          'dependencia_entidad': _dependenciaController.text,
-          'id_grupo': _idGrupoController.text,
-          'firma': firmaBytes,
-          'tipo_evento_id': 0,
-        };
-
-        int evaluacionId = await _dbHelper.insertarEvaluacion(nuevaEvaluacion);
-
-        setState(() {
-          _evaluacionId = evaluacionId;
-        });
-
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Evaluación guardada exitosamente')),
-        );
-      } catch (e) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar la evaluación: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _handleEventoSeleccionado(String label, int tipoEventoId) async {
-    if (_evaluacionId == null) return;
-
-    await _dbHelper.actualizarEvaluacion(_evaluacionId!, {
-      'tipo_evento_id': tipoEventoId,
-    });
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Evento $label seleccionado')),
-    );
-
-    // Opcional: Puedes navegar de vuelta o realizar otra acción
+    // Ya no necesitamos este método para cambiar de pestaña
   }
 
   void _previsualizar() {
@@ -171,7 +125,8 @@ class _IdentificacionEvaluacionScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Nombre del Evaluador: ${_nombreEvaluadorController.text}'),
-              Text('ID Evento: ${_fechaController.text}'),
+              Text('Fecha de Inspección: ${_fechaController.text}'),
+              Text('Hora: ${_horaController.text}'),
               Text('ID Grupo: ${_idGrupoController.text}'),
               Text('Dependencia / Entidad: ${_dependenciaController.text}'),
               // Añade más campos si es necesario
@@ -188,20 +143,31 @@ class _IdentificacionEvaluacionScreenState
     }
   }
 
-  // Método actualizado para guardar y continuar
+  // Modificar guardarYContinuar para validar y guardar todo junto
   Future<void> guardarYContinuar() async {
+    // Validar datos de la primera subsección
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _currentIndex = 0);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor complete los datos generales')),
+      );
+      return;
+    }
+
+    // Verificar si se seleccionó un evento
+    if (_selectedEventoId == null) {
+      setState(() => _currentIndex = 1);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor seleccione un tipo de evento')),
+      );
+      return;
+    }
+
     try {
-      if (!_formKey.currentState!.validate()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Por favor complete todos los campos requeridos')),
-        );
-        return;
-      }
-
-      // Convertir firma a bytes si existe
       final Uint8List? firmaBytes = await _fileToBytes(_firmaFile);
-
-      Map<String, dynamic> nuevaEvaluacion = {
+      
+      // Crear mapa con todos los datos
+      final Map<String, dynamic> evaluacionData = {
         'eventoId': DateTime.now().millisecondsSinceEpoch,
         'usuario_id': widget.userId,
         'fecha_inspeccion': _fechaController.text,
@@ -209,17 +175,14 @@ class _IdentificacionEvaluacionScreenState
         'dependencia_entidad': _dependenciaController.text,
         'id_grupo': _idGrupoController.text,
         'firma': firmaBytes,
-        'tipo_evento_id': 0,
+        'tipo_evento_id': _selectedEventoId,
       };
-
-      int evaluacionId = await _dbHelper.insertarEvaluacion(nuevaEvaluacion);
-
-      setState(() {
-        _evaluacionId = evaluacionId;
-      });
+      
+      // Guardar todo junto
+      final evaluacionId = await _dbHelper.insertarEvaluacion(evaluacionData);
 
       if (!mounted) return;
-      
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -230,11 +193,17 @@ class _IdentificacionEvaluacionScreenState
       );
     } catch (e) {
       if (!mounted) return;
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al guardar: $e')),
       );
     }
+  }
+
+  // Simplificar el manejador de eventos
+  Future<void> _handleEventoSeleccionado(String label, int tipoEventoId) async {
+    setState(() {
+      _selectedEventoId = tipoEventoId;
+    });
   }
 
   @override
@@ -244,26 +213,31 @@ class _IdentificacionEvaluacionScreenState
         title: const Text('Identificación de Evaluación'),
         backgroundColor: const Color(0xFF002855),
       ),
-      body: _currentIndex == 0
-          ? PrimeraSubseccion(
-              formKey: _formKey,
-              fechaController: _fechaController,
-              horaController: _horaController,
-              nombreEvaluadorController: _nombreEvaluadorController,
-              dependenciaController: _dependenciaController,
-              idGrupoController: _idGrupoController,
-              onGuardar: _guardarEvaluacion,
-              selectDate: _selectDate,
-              selectTime: _selectTime,
-              onPrevisualizar: _previsualizar,
-              firmaImageNotifier: _firmaImageNotifier,
-              onSubirFirma: _subirFirma, // Pasar el método de subir firma
-            )
-          : SegundaSubseccion(
-              evaluacionId: _evaluacionId,
-              onEventoSeleccionado: _handleEventoSeleccionado,
-              onContinue: guardarYContinuar, // Añadido
-            ),
+      // Modificar el cuerpo para permitir cambiar entre subsecciones sin restricciones
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          PrimeraSubseccion(
+            formKey: _formKey,
+            fechaController: _fechaController,
+            horaController: _horaController,
+            nombreEvaluadorController: _nombreEvaluadorController,
+            dependenciaController: _dependenciaController,
+            idGrupoController: _idGrupoController,
+            selectDate: _selectDate,
+            selectTime: _selectTime,
+            firmaImageNotifier: _firmaImageNotifier,
+            onSubirFirma: _subirFirma,
+            onGuardar: _guardarEvaluacion, // Agrega este argumento
+            onPrevisualizar: _previsualizar, // Y este también
+          ),
+          SegundaSubseccion(
+            onEventoSeleccionado: _handleEventoSeleccionado,
+            onContinue: guardarYContinuar,
+            selectedEventoId: _selectedEventoId,
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         onTap: _onTabTapped,
         currentIndex: _currentIndex,

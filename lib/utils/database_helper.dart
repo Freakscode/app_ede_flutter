@@ -407,12 +407,16 @@ class DatabaseHelper {
     }
 
     // Insertar NivelDaño
-    await db.insert('NivelDaño', {'porcentaje_afectacion': 'Ninguno', 'severidad_danos': 'Bajo'});
-    await db.insert('NivelDaño', {'porcentaje_afectacion': '<10%', 'severidad_danos': 'Bajo'});
-    await db.insert('NivelDaño', {'porcentaje_afectacion': '10-40%', 'severidad_danos': 'Medio'});
-    await db.insert('NivelDaño', {'porcentaje_afectacion': '40-70%', 'severidad_danos': 'Medio'});
-    await db.insert('NivelDaño', {'porcentaje_afectacion': '70%+', 'severidad_danos': 'Alto'});
-
+    await db.insert('NivelDaño',
+        {'porcentaje_afectacion': 'Ninguno', 'severidad_danos': 'Bajo'});
+    await db.insert('NivelDaño',
+        {'porcentaje_afectacion': '<10%', 'severidad_danos': 'Bajo'});
+    await db.insert('NivelDaño',
+        {'porcentaje_afectacion': '10-40%', 'severidad_danos': 'Medio'});
+    await db.insert('NivelDaño',
+        {'porcentaje_afectacion': '40-70%', 'severidad_danos': 'Medio'});
+    await db.insert('NivelDaño',
+        {'porcentaje_afectacion': '70%+', 'severidad_danos': 'Alto'});
   }
 
   // --------------------
@@ -477,7 +481,8 @@ class DatabaseHelper {
   }
 
   // Actualizar tipo de evento
-  Future<int> actualizarTipoEvento(int id, Map<String, dynamic> tipoEvento) async {
+  Future<int> actualizarTipoEvento(
+      int id, Map<String, dynamic> tipoEvento) async {
     final db = await database;
     return await db.update(
       'TipoEventos',
@@ -521,7 +526,8 @@ class DatabaseHelper {
   }
 
   // Actualizar evaluación
-  Future<int> actualizarEvaluacion(int id, Map<String, dynamic> evaluacion) async {
+  Future<int> actualizarEvaluacion(
+      int id, Map<String, dynamic> evaluacion) async {
     final db = await database;
     return await db.update(
       'Evaluaciones',
@@ -589,7 +595,8 @@ class DatabaseHelper {
   }
 
   // Obtener contactos por edificio_id
-  Future<List<Map<String, dynamic>>> obtenerContactosPorEdificio(int edificioId) async {
+  Future<List<Map<String, dynamic>>> obtenerContactosPorEdificio(
+      int edificioId) async {
     final db = await database;
     return await db.query(
       'Contacto',
@@ -624,13 +631,15 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva EvaluacionEdificio
-  Future<int> insertarEvaluacionEdificio(Map<String, dynamic> evaluacionEdificio) async {
+  Future<int> insertarEvaluacionEdificio(
+      Map<String, dynamic> evaluacionEdificio) async {
     final db = await database;
     return await db.insert('EvaluacionEdificio', evaluacionEdificio);
   }
 
   // Obtener EvaluacionEdificio por evaluacion_id
-  Future<List<Map<String, dynamic>>> obtenerEvaluacionEdificioPorEvaluacion(int evaluacionId) async {
+  Future<List<Map<String, dynamic>>> obtenerEvaluacionEdificioPorEvaluacion(
+      int evaluacionId) async {
     final db = await database;
     return await db.query(
       'EvaluacionEdificio',
@@ -640,7 +649,8 @@ class DatabaseHelper {
   }
 
   // Actualizar EvaluacionEdificio
-  Future<int> actualizarEvaluacionEdificio(int id, Map<String, dynamic> evaluacionEdificio) async {
+  Future<int> actualizarEvaluacionEdificio(
+      int id, Map<String, dynamic> evaluacionEdificio) async {
     final db = await database;
     return await db.update(
       'EvaluacionEdificio',
@@ -665,13 +675,15 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva CaracteristicasGenerales
-  Future<int> insertarCaracteristicasGenerales(Map<String, dynamic> caracteristicas) async {
+  Future<int> insertarCaracteristicasGenerales(
+      Map<String, dynamic> caracteristicas) async {
     final db = await database;
     return await db.insert('CaracteristicasGenerales', caracteristicas);
   }
 
   // Obtener CaracteristicasGenerales por evaluacion_edificio_id
-  Future<Map<String, dynamic>?> obtenerCaracteristicasGenerales(int evaluacionEdificioId) async {
+  Future<Map<String, dynamic>?> obtenerCaracteristicasGenerales(
+      int evaluacionEdificioId) async {
     final db = await database;
     List<Map<String, dynamic>> resultados = await db.query(
       'CaracteristicasGenerales',
@@ -685,7 +697,8 @@ class DatabaseHelper {
   }
 
   // Actualizar CaracteristicasGenerales
-  Future<int> actualizarCaracteristicasGenerales(int id, Map<String, dynamic> caracteristicas) async {
+  Future<int> actualizarCaracteristicasGenerales(
+      int id, Map<String, dynamic> caracteristicas) async {
     final db = await database;
     return await db.update(
       'CaracteristicasGenerales',
@@ -732,7 +745,8 @@ class DatabaseHelper {
   }
 
   // Obtener UsosPredominantes por evaluacion_edificio_id
-  Future<List<Map<String, dynamic>>> obtenerUsosPorEvaluacionEdificio(int evaluacionEdificioId) async {
+  Future<List<Map<String, dynamic>>> obtenerUsosPorEvaluacionEdificio(
+      int evaluacionEdificioId) async {
     final db = await database;
     return await db.rawQuery('''
       SELECT UsosPredominantes.*
@@ -779,7 +793,8 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar un nuevo SistemaEntrepiso
-  Future<int> insertarSistemaEntrepiso(Map<String, dynamic> sistemaEntrepiso) async {
+  Future<int> insertarSistemaEntrepiso(
+      Map<String, dynamic> sistemaEntrepiso) async {
     final db = await database;
     return await db.insert('SistemasEntrepiso', sistemaEntrepiso);
   }
@@ -795,7 +810,8 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva SistemaCubierta
-  Future<int> insertarSistemaCubierta(Map<String, dynamic> sistemaCubierta) async {
+  Future<int> insertarSistemaCubierta(
+      Map<String, dynamic> sistemaCubierta) async {
     final db = await database;
     return await db.insert('SistemasCubierta', sistemaCubierta);
   }
@@ -811,7 +827,8 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar un nuevo ElementoNoEstructural
-  Future<int> insertarElementoNoEstructural(Map<String, dynamic> elemento) async {
+  Future<int> insertarElementoNoEstructural(
+      Map<String, dynamic> elemento) async {
     final db = await database;
     return await db.insert('ElementosNoEstructurales', elemento);
   }
@@ -833,7 +850,8 @@ class DatabaseHelper {
   }
 
   // Obtener DetalleEstructura por evaluacion_edificio_id
-  Future<Map<String, dynamic>?> obtenerDetalleEstructura(int evaluacionEdificioId) async {
+  Future<Map<String, dynamic>?> obtenerDetalleEstructura(
+      int evaluacionEdificioId) async {
     final db = await database;
     List<Map<String, dynamic>> resultados = await db.query(
       'DetalleEstructura',
@@ -847,7 +865,8 @@ class DatabaseHelper {
   }
 
   // Actualizar DetalleEstructura
-  Future<int> actualizarDetalleEstructura(int id, Map<String, dynamic> detalle) async {
+  Future<int> actualizarDetalleEstructura(
+      int id, Map<String, dynamic> detalle) async {
     final db = await database;
     return await db.update(
       'DetalleEstructura',
@@ -884,7 +903,8 @@ class DatabaseHelper {
   }
 
   // Actualizar RiesgoExterno
-  Future<int> actualizarRiesgoExterno(int id, Map<String, dynamic> riesgo) async {
+  Future<int> actualizarRiesgoExterno(
+      int id, Map<String, dynamic> riesgo) async {
     final db = await database;
     return await db.update(
       'RiesgosExternos',
@@ -909,13 +929,15 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva EvaluacionRiesgo
-  Future<int> insertarEvaluacionRiesgo(Map<String, dynamic> evaluacionRiesgo) async {
+  Future<int> insertarEvaluacionRiesgo(
+      Map<String, dynamic> evaluacionRiesgo) async {
     final db = await database;
     return await db.insert('EvaluacionRiesgos', evaluacionRiesgo);
   }
 
   // Obtener Riesgos por evaluacion_id
-  Future<List<Map<String, dynamic>>> obtenerRiesgosPorEvaluacion(int evaluacionId) async {
+  Future<List<Map<String, dynamic>>> obtenerRiesgosPorEvaluacion(
+      int evaluacionId) async {
     final db = await database;
     return await db.rawQuery('''
       SELECT RiesgosExternos.*, EvaluacionRiesgos.compromete_estabilidad, EvaluacionRiesgos.compromete_accesos
@@ -936,7 +958,8 @@ class DatabaseHelper {
   }
 
   // Obtener DañosEvaluacion por evaluacion_edificio_id
-  Future<Map<String, dynamic>?> obtenerDaniosEvaluacion(int evaluacionEdificioId) async {
+  Future<Map<String, dynamic>?> obtenerDaniosEvaluacion(
+      int evaluacionEdificioId) async {
     final db = await database;
     List<Map<String, dynamic>> resultados = await db.query(
       'DañosEvaluacion',
@@ -950,7 +973,8 @@ class DatabaseHelper {
   }
 
   // Actualizar DañosEvaluacion
-  Future<int> actualizarDaniosEvaluacion(int id, Map<String, dynamic> danios) async {
+  Future<int> actualizarDaniosEvaluacion(
+      int id, Map<String, dynamic> danios) async {
     final db = await database;
     return await db.update(
       'DañosEvaluacion',
@@ -991,13 +1015,15 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva EvaluacionNivelDanio
-  Future<int> insertarEvaluacionNivelDanio(Map<String, dynamic> evaluacionNivelDanio) async {
+  Future<int> insertarEvaluacionNivelDanio(
+      Map<String, dynamic> evaluacionNivelDanio) async {
     final db = await database;
     return await db.insert('EvaluacionNivelDaño', evaluacionNivelDanio);
   }
 
   // Obtener NivelDaño por evaluacion_id
-  Future<List<Map<String, dynamic>>> obtenerNivelDanioPorEvaluacion(int evaluacionId) async {
+  Future<List<Map<String, dynamic>>> obtenerNivelDanioPorEvaluacion(
+      int evaluacionId) async {
     final db = await database;
     return await db.rawQuery('''
       SELECT NivelDaño.*
@@ -1028,13 +1054,15 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva EvaluacionHabitabilidad
-  Future<int> insertarEvaluacionHabitabilidad(Map<String, dynamic> evaluacionHabitabilidad) async {
+  Future<int> insertarEvaluacionHabitabilidad(
+      Map<String, dynamic> evaluacionHabitabilidad) async {
     final db = await database;
     return await db.insert('EvaluacionHabitabilidad', evaluacionHabitabilidad);
   }
 
   // Obtener Habitabilidad por evaluacion_id
-  Future<Map<String, dynamic>?> obtenerHabitabilidadPorEvaluacion(int evaluacionId) async {
+  Future<Map<String, dynamic>?> obtenerHabitabilidadPorEvaluacion(
+      int evaluacionId) async {
     final db = await database;
     List<Map<String, dynamic>> resultados = await db.query(
       'EvaluacionHabitabilidad',
@@ -1048,7 +1076,8 @@ class DatabaseHelper {
   }
 
   // Actualizar EvaluacionHabitabilidad
-  Future<int> actualizarEvaluacionHabitabilidad(int evaluacionId, Map<String, dynamic> evaluacionHabitabilidad) async {
+  Future<int> actualizarEvaluacionHabitabilidad(
+      int evaluacionId, Map<String, dynamic> evaluacionHabitabilidad) async {
     final db = await database;
     return await db.update(
       'EvaluacionHabitabilidad',
@@ -1089,13 +1118,15 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva EvaluacionAccion
-  Future<int> insertarEvaluacionAccion(Map<String, dynamic> evaluacionAccion) async {
+  Future<int> insertarEvaluacionAccion(
+      Map<String, dynamic> evaluacionAccion) async {
     final db = await database;
     return await db.insert('EvaluacionAcciones', evaluacionAccion);
   }
 
   // Obtener AccionesRecomendadas por evaluacion_id
-  Future<List<Map<String, dynamic>>> obtenerAccionesPorEvaluacion(int evaluacionId) async {
+  Future<List<Map<String, dynamic>>> obtenerAccionesPorEvaluacion(
+      int evaluacionId) async {
     final db = await database;
     return await db.rawQuery('''
       SELECT AccionesRecomendadas.*
@@ -1110,13 +1141,15 @@ class DatabaseHelper {
   // --------------------
 
   // Insertar una nueva EvaluacionAdicional
-  Future<int> insertarEvaluacionAdicional(Map<String, dynamic> evaluacionAdicional) async {
+  Future<int> insertarEvaluacionAdicional(
+      Map<String, dynamic> evaluacionAdicional) async {
     final db = await database;
     return await db.insert('EvaluacionAdicional', evaluacionAdicional);
   }
 
   // Obtener EvaluacionAdicional por evaluacion_id
-  Future<List<Map<String, dynamic>>> obtenerEvaluacionAdicional(int evaluacionId) async {
+  Future<List<Map<String, dynamic>>> obtenerEvaluacionAdicional(
+      int evaluacionId) async {
     final db = await database;
     return await db.query(
       'EvaluacionAdicional',
@@ -1126,7 +1159,8 @@ class DatabaseHelper {
   }
 
   // Actualizar EvaluacionAdicional
-  Future<int> actualizarEvaluacionAdicional(int id, Map<String, dynamic> evaluacionAdicional) async {
+  Future<int> actualizarEvaluacionAdicional(
+      int id, Map<String, dynamic> evaluacionAdicional) async {
     final db = await database;
     return await db.update(
       'EvaluacionAdicional',
@@ -1234,7 +1268,7 @@ class DatabaseHelper {
   }
 
   /// Inserta una nueva evaluación con firma en la base de datos.
-  /// 
+  ///
   /// [evaluacion] debe ser un mapa que contenga las claves correspondientes a las columnas de la tabla Evaluaciones,
   /// incluyendo el campo 'firma' como List<int> (bytes del archivo).
   Future<int> insertEvaluacionConFirma(Map<String, dynamic> evaluacion) async {
@@ -1247,7 +1281,7 @@ class DatabaseHelper {
   }
 
   /// Actualiza la firma de una evaluación existente.
-  /// 
+  ///
   /// [id] es el ID de la evaluación que se actualizará.
   /// [firma] es la firma en formato de bytes (List<int>).
   Future<int> updateFirmaEvaluacion(int id, List<int> firma) async {
@@ -1261,7 +1295,7 @@ class DatabaseHelper {
   }
 
   /// Recupera la firma de una evaluación específica.
-  /// 
+  ///
   /// [id] es el ID de la evaluación de la cual se desea obtener la firma.
   /// Retorna un List<int> con los bytes de la firma o null si no se encuentra.
   Future<List<int>?> getFirmaEvaluacion(int id) async {
@@ -1280,8 +1314,49 @@ class DatabaseHelper {
     }
   }
 
+  // Agregar este nuevo método
+  Future<int> insertarIdentificacionEdificacion({
+    required int evaluacionId,
+    required Map<String, dynamic> datosGenerales,
+    required Map<String, dynamic> datosCatastrales,
+    required Map<String, dynamic> datosContacto,
+  }) async {
+    final db = await database;
+
+    // 1. Insertar edificio
+    final edificioId = await db.insert('Edificios', {
+      'nombre': datosGenerales['nombre_edificacion'],
+      'municipio': datosGenerales['municipio'],
+      'barrio_vereda': datosGenerales['barrio_vereda'],
+      'direccion': datosGenerales['direccion'],
+      'tipo_propiedad': datosGenerales['tipo_propiedad'],
+    });
+
+    // 2. Insertar evaluación edificio
+    final evaluacionEdificioId = await db.insert('EvaluacionEdificio', {
+      'evaluacion_id': evaluacionId,
+      'edificio_id': edificioId,
+      'codigo_medellin': datosCatastrales['codigo_medellin'],
+      'codigo_area_metropolitana':
+          datosCatastrales['codigo_area_metropolitana'],
+      'latitud': datosCatastrales['latitud'],
+      'longitud': datosCatastrales['longitud'],
+    });
+
+    // 3. Insertar contacto
+    await db.insert('Contacto', {
+      'edificio_id': edificioId,
+      'nombre': datosContacto['nombre'],
+      'telefono': datosContacto['telefono'],
+      'correo_electronico': datosContacto['correo'],
+      'tipo_persona': datosContacto['tipo_persona'],
+    });
+
+    return evaluacionEdificioId;
+  }
+
   /// Inserta una evaluación con firma utilizando datos separados.
-  /// 
+  ///
   /// [eventoId], [usuarioId], [fechaInspeccion], [hora], [dependenciaEntidad],
   /// [idGrupo], [tipoEventoId], y [firma] son los datos de la evaluación.
   Future<int> insertEvaluacion({
