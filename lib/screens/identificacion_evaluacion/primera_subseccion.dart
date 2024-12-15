@@ -1,8 +1,4 @@
-// ignore_for_file: unused_import
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class PrimeraSubseccion extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -11,11 +7,11 @@ class PrimeraSubseccion extends StatelessWidget {
   final TextEditingController nombreEvaluadorController;
   final TextEditingController dependenciaController;
   final TextEditingController idGrupoController;
+  final TextEditingController eventoIdController;
   final VoidCallback onGuardar;
   final Future<void> Function(BuildContext) selectDate;
   final Future<void> Function(BuildContext) selectTime;
-  final VoidCallback onPrevisualizar;
-  final ValueNotifier<ImageProvider?> firmaImageNotifier; // Añadido
+  final ValueNotifier<ImageProvider?> firmaImageNotifier;
   final Future<void> Function() onSubirFirma;
 
   const PrimeraSubseccion({
@@ -26,11 +22,11 @@ class PrimeraSubseccion extends StatelessWidget {
     required this.nombreEvaluadorController,
     required this.dependenciaController,
     required this.idGrupoController,
+    required this.eventoIdController,
     required this.onGuardar,
     required this.selectDate,
     required this.selectTime,
-    required this.onPrevisualizar,
-    required this.firmaImageNotifier, // Añadido
+    required this.firmaImageNotifier,
     required this.onSubirFirma,
   });
 
@@ -41,30 +37,10 @@ class PrimeraSubseccion extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // Encabezado
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Botón de Nuevo Registro
-              ElevatedButton.icon(
-                onPressed: onGuardar,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Nuevo Registro'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002855),
-                ),
-              ),
-              // Ícono de Usuario
-              const Icon(
-                Icons.account_circle,
-                size: 40,
-                color: Color(0xFF002855),
-              ),
-            ],
           ),
           const SizedBox(height: 20),
-
-          // Título
           const Center(
             child: Text(
               'IDENTIFICACIÓN DE EVALUACIÓN',
@@ -77,7 +53,48 @@ class PrimeraSubseccion extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Nombre del Evaluador
+          // Fecha de inspección
+          TextFormField(
+            controller: fechaController,
+            decoration: InputDecoration(
+              labelText: 'Fecha de Inspección',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.calendar_today),
+                onPressed: () => selectDate(context),
+              ),
+            ),
+            readOnly: true,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Por favor ingresa la fecha de inspección';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16.0),
+
+          // Hora
+          TextFormField(
+            controller: horaController,
+            decoration: InputDecoration(
+              labelText: 'Hora',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.access_time),
+                onPressed: () => selectTime(context),
+              ),
+            ),
+            readOnly: true,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Por favor ingresa la hora de inspección';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16.0),
+          //Nombre Evaluador
           TextFormField(
             controller: nombreEvaluadorController,
             decoration: const InputDecoration(
@@ -86,30 +103,26 @@ class PrimeraSubseccion extends StatelessWidget {
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Por favor ingresa el nombre del evaluador';
+                return 'Por favor, digite el nombre del evaluador';
               }
               return null;
             },
           ),
           const SizedBox(height: 16.0),
-
-          // ID Evento con ícono de lupa
           TextFormField(
-            controller: fechaController,
-            decoration: InputDecoration(
-              labelText: 'ID Evento',
-              border: const OutlineInputBorder(),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: () {
-                  // Implementar lógica de búsqueda aquí
-                },
-              ),
+            controller: eventoIdController,
+            decoration: const InputDecoration(
+              labelText: 'Id Evento',
+              border: OutlineInputBorder(),
             ),
-            // Opcional: Validación si es requerida
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Por favor, digite el nombre del evaluador';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16.0),
-
           // ID Grupo
           TextFormField(
             controller: idGrupoController,
@@ -133,18 +146,13 @@ class PrimeraSubseccion extends StatelessWidget {
               labelText: 'Dependencia / Entidad',
               border: OutlineInputBorder(),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingresa la dependencia o entidad';
-              }
-              return null;
-            },
+            // Dependencia es opcional según tu lógica, si lo quieres obligatorio, agrega validador
           ),
           const SizedBox(height: 16.0),
 
-          // Placeholder para Firma
+          // Botón para subir firma
           GestureDetector(
-            onTap: onSubirFirma, // Usamos la función que movimos fuera
+            onTap: onSubirFirma,
             child: ValueListenableBuilder<ImageProvider?>(
               valueListenable: firmaImageNotifier,
               builder: (context, firmaImage, child) {
@@ -161,6 +169,8 @@ class PrimeraSubseccion extends StatelessWidget {
                             Image(
                               image: firmaImage,
                               fit: BoxFit.contain,
+                              width: double.infinity,
+                              height: double.infinity,
                             ),
                             Positioned(
                               top: 8,

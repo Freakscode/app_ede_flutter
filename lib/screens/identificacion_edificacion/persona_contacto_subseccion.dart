@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/database_helper.dart';
-import '../descripcion_edificacion/descripcion_edificacion_screen.dart';
+import '../descripcion_edificacion/bloque1.dart';
 
 class PersonaContactoSubseccion extends StatefulWidget {
   final TextEditingController nombreContactoController;
@@ -10,7 +10,7 @@ class PersonaContactoSubseccion extends StatefulWidget {
   final TextEditingController nombreEdificacionController;
   final TextEditingController municipioController;
   final TextEditingController barrioVeredaController;
-  final TextEditingController direccionController;
+  final TextEditingController comunaController;
   final TextEditingController tipoPropiedadController;
   final TextEditingController medellinController;
   final TextEditingController areaMetropolitanaController;
@@ -19,7 +19,7 @@ class PersonaContactoSubseccion extends StatefulWidget {
   final int evaluacionId;
 
   const PersonaContactoSubseccion({
-    Key? key,
+    super.key,
     required this.nombreContactoController,
     required this.telefonoController,
     required this.correoController,
@@ -27,14 +27,14 @@ class PersonaContactoSubseccion extends StatefulWidget {
     required this.nombreEdificacionController,
     required this.municipioController,
     required this.barrioVeredaController,
-    required this.direccionController,
+    required this.comunaController,
     required this.tipoPropiedadController,
     required this.medellinController,
     required this.areaMetropolitanaController,
     required this.latitudController,
     required this.longitudController,
     required this.evaluacionId,
-  }) : super(key: key);
+  });
 
   @override
   State<PersonaContactoSubseccion> createState() => _PersonaContactoSubseccionState();
@@ -43,6 +43,7 @@ class PersonaContactoSubseccion extends StatefulWidget {
 class _PersonaContactoSubseccionState extends State<PersonaContactoSubseccion> {
   String _selectedTipo = '';
   final TextEditingController _otroTipoController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -63,25 +64,16 @@ class _PersonaContactoSubseccionState extends State<PersonaContactoSubseccion> {
   }
 
   Future<void> _guardarYContinuar() async {
-    // Validar tipo de persona
-    if (_selectedTipo == 'Otro' && _otroTipoController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor especifique el tipo de persona')),
-      );
-      return;
-    }
-
     try {
       // Validar datos generales
       if (widget.nombreEdificacionController.text.isEmpty ||
           widget.municipioController.text.isEmpty ||
           widget.barrioVeredaController.text.isEmpty ||
-          widget.direccionController.text.isEmpty ||
+          widget.comunaController.text.isEmpty ||  // Cambiar direccionController por comunaController
           widget.tipoPropiedadController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Complete todos los datos generales')),
         );
-        // Opcional: Puedes cambiar la pestaña activa si lo deseas
         return;
       }
 
@@ -109,27 +101,38 @@ class _PersonaContactoSubseccionState extends State<PersonaContactoSubseccion> {
       }
 
       // Preparar datos para guardar
+      final datosGenerales = {
+        'nombre_edificacion': widget.nombreEdificacionController.text,
+        'municipio': widget.municipioController.text,
+        'barrio_vereda': widget.barrioVeredaController.text,
+        'comuna': widget.comunaController.text,  // Cambiar dirección por comuna
+        'tipo_propiedad': widget.tipoPropiedadController.text,
+      };
+
+      final datosCatastrales = {
+        'codigo_medellin': widget.medellinController.text,
+        'codigo_area_metropolitana': widget.areaMetropolitanaController.text,
+        'latitud': double.parse(widget.latitudController.text),
+        'longitud': double.parse(widget.longitudController.text),
+      };
+
+      final datosContacto = {
+        'nombre': widget.nombreContactoController.text,
+        'telefono': widget.telefonoController.text,
+        'correo': widget.correoController.text,
+        'tipo_persona': _selectedTipo == 'Otro' ? _otroTipoController.text : widget.tipoPersonaController.text,
+      };
+
+      // Imprimir datos en la consola
+      print('Datos Generales: $datosGenerales');
+      print('Datos Catastrales: $datosCatastrales');
+      print('Datos de Contacto: $datosContacto');
+
       final evaluacionEdificioId = await DatabaseHelper().insertarIdentificacionEdificacion(
         evaluacionId: widget.evaluacionId,
-        datosGenerales: {
-          'nombre_edificacion': widget.nombreEdificacionController.text,
-          'municipio': widget.municipioController.text,
-          'barrio_vereda': widget.barrioVeredaController.text,
-          'direccion': widget.direccionController.text,
-          'tipo_propiedad': widget.tipoPropiedadController.text,
-        },
-        datosCatastrales: {
-          'codigo_medellin': widget.medellinController.text,
-          'codigo_area_metropolitana': widget.areaMetropolitanaController.text,
-          'latitud': double.parse(widget.latitudController.text),
-          'longitud': double.parse(widget.longitudController.text),
-        },
-        datosContacto: {
-          'nombre': widget.nombreContactoController.text,
-          'telefono': widget.telefonoController.text,
-          'correo': widget.correoController.text,
-          'tipo_persona': _selectedTipo == 'Otro' ? _otroTipoController.text : widget.tipoPersonaController.text,
-        },
+        datosGenerales: datosGenerales,
+        datosCatastrales: datosCatastrales,
+        datosContacto: datosContacto,
       );
 
       if (!mounted) return;
@@ -138,7 +141,7 @@ class _PersonaContactoSubseccionState extends State<PersonaContactoSubseccion> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => DescripcionEdificacionScreen(
+          builder: (context) => Bloque1Screen(
             evaluacionId: widget.evaluacionId,
             evaluacionEdificioId: evaluacionEdificioId,
           ),
@@ -157,119 +160,122 @@ class _PersonaContactoSubseccionState extends State<PersonaContactoSubseccion> {
       // Puedes optar por no usar otro Scaffold si ya está envuelto en uno superior
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Nombre
-            TextFormField(
-              controller: widget.nombreContactoController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor ingrese el nombre';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            // Teléfono
-            TextFormField(
-              controller: widget.telefonoController,
-              decoration: const InputDecoration(
-                labelText: 'Teléfono',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.phone,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor ingrese el teléfono';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            // Correo Electrónico
-            TextFormField(
-              controller: widget.correoController,
-              decoration: const InputDecoration(
-                labelText: 'Correo Electrónico',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor ingrese el correo electrónico';
-                }
-                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                  return 'Ingrese un correo electrónico válido';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            // Tipo de Persona
-            const Text(
-              'Tipo de Persona',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            _buildTipoPersonaButton(
-              icon: Icons.person,
-              label: 'Propietario',
-              tipo: 'Propietario',
-            ),
-            const SizedBox(height: 12),
-            _buildTipoPersonaButton(
-              icon: Icons.home,
-              label: 'Inquilino',
-              tipo: 'Inquilino',
-            ),
-            const SizedBox(height: 12),
-            _buildTipoPersonaButton(
-              icon: Icons.person_outline,
-              label: 'Otro',
-              tipo: 'Otro',
-            ),
-            if (_selectedTipo == 'Otro') ...[
-              const SizedBox(height: 12),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Nombre
               TextFormField(
-                controller: _otroTipoController,
+                controller: widget.nombreContactoController,
                 decoration: const InputDecoration(
-                  labelText: 'Especifique el tipo de persona',
+                  labelText: 'Nombre',
                   border: OutlineInputBorder(),
                 ),
-                onChanged: (value) {
-                  widget.tipoPersonaController.text = value;
-                },
                 validator: (value) {
-                  if (_selectedTipo == 'Otro' && (value == null || value.isEmpty)) {
-                    return 'Por favor especifique el tipo de persona';
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese el nombre';
                   }
                   return null;
                 },
               ),
-            ],
-            const SizedBox(height: 24),
-            // Botón "Continuar"
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _guardarYContinuar,
-                icon: const Icon(Icons.arrow_forward),
-                label: const Text('Continuar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF002855),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 16),
+              // Teléfono
+              TextFormField(
+                controller: widget.telefonoController,
+                decoration: const InputDecoration(
+                  labelText: 'Teléfono',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese el teléfono';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Correo Electrónico
+              TextFormField(
+                controller: widget.correoController,
+                decoration: const InputDecoration(
+                  labelText: 'Correo Electrónico',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese el correo electrónico';
+                  }
+                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                    return 'Ingrese un correo electrónico válido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Tipo de Persona
+              const Text(
+                'Tipo de Persona',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildTipoPersonaButton(
+                icon: Icons.person,
+                label: 'Propietario',
+                tipo: 'Propietario',
+              ),
+              const SizedBox(height: 12),
+              _buildTipoPersonaButton(
+                icon: Icons.home,
+                label: 'Inquilino',
+                tipo: 'Inquilino',
+              ),
+              const SizedBox(height: 12),
+              _buildTipoPersonaButton(
+                icon: Icons.person_outline,
+                label: 'Otro',
+                tipo: 'Otro',
+              ),
+              if (_selectedTipo == 'Otro') ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _otroTipoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Especifique el tipo de persona',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    widget.tipoPersonaController.text = value;
+                  },
+                  validator: (value) {
+                    if (_selectedTipo == 'Otro' && (value == null || value.isEmpty)) {
+                      return 'Por favor especifique el tipo de persona';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+              const SizedBox(height: 24),
+              // Botón "Continuar"
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _guardarYContinuar,
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text('Continuar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF002855),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

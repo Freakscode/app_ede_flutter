@@ -61,30 +61,40 @@ class DatabaseHelper {
 
     // Tabla Evaluaciones
     await db.execute('''
-      CREATE TABLE Evaluaciones (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        eventoId INTEGER NOT NULL,
-        usuario_id INTEGER NOT NULL,
-        fecha_inspeccion TEXT NOT NULL,
-        hora TEXT NOT NULL,
-        dependencia_entidad TEXT,
-        id_grupo TEXT,
-        firma BLOB,
-        tipo_evento_id INTEGER,
-        FOREIGN KEY (usuario_id) REFERENCES Usuarios(id),
-        FOREIGN KEY (tipo_evento_id) REFERENCES TipoEventos(id)
-      )
+    CREATE TABLE Evaluaciones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      eventoId INTEGER NOT NULL,
+      usuario_id INTEGER NOT NULL,
+      fecha_inspeccion TEXT NOT NULL,
+      hora TEXT NOT NULL,
+      dependencia_entidad TEXT,
+      id_grupo TEXT,
+      firma BLOB,
+      tipo_evento_id INTEGER,
+      nombre_evaluador TEXT,
+      otro_tipo_evento TEXT, -- Agregamos esta columna
+      FOREIGN KEY (usuario_id) REFERENCES Usuarios(id),
+      FOREIGN KEY (tipo_evento_id) REFERENCES TipoEventos(id)
+    );
     ''');
 
     // Tabla Edificios
     await db.execute('''
       CREATE TABLE Edificios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
+        nombre_edificacion TEXT,
         municipio TEXT NOT NULL,
-        barrio_vereda TEXT,
-        direccion TEXT,
-        tipo_propiedad TEXT CHECK(tipo_propiedad IN ('Pública', 'Privada'))
+        comuna TEXT NOT NULL,
+        barrio_vereda TEXT NOT NULL,
+        tipo_propiedad TEXT,
+        departamento TEXT,
+        tipo_via TEXT,
+        numero_via TEXT,
+        apendice_via TEXT,
+        orientacion TEXT,
+        numero_cruce TEXT,
+        orientacion_cruce TEXT,
+        complemento_direccion TEXT
       )
     ''');
 
@@ -96,8 +106,8 @@ class DatabaseHelper {
         edificio_id INTEGER NOT NULL,
         codigo_medellin TEXT,
         codigo_area_metropolitana TEXT,
-        latitud REAL,
-        longitud REAL,
+        latitud REAL NOT NULL,
+        longitud REAL NOT NULL,
         FOREIGN KEY (evaluacion_id) REFERENCES Evaluaciones(id),
         FOREIGN KEY (edificio_id) REFERENCES Edificios(id)
       )
@@ -118,23 +128,48 @@ class DatabaseHelper {
 
     // Tabla CaracteristicasGenerales
     await db.execute('''
-      CREATE TABLE CaracteristicasGenerales (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        evaluacion_edificio_id INTEGER NOT NULL,
-        numero_pisos INTEGER,
-        numero_sotanos INTEGER,
-        frente REAL,
-        fondo REAL,
-        unidades_residenciales INTEGER,
-        unidades_no_habitadas INTEGER,
-        unidades_comerciales INTEGER,
-        ocupantes INTEGER,
-        acceso TEXT CHECK(acceso IN ('Obstruido', 'Libre')),
-        muertos INTEGER CHECK(muertos IN (0,1)),
-        heridos INTEGER CHECK(heridos IN (0,1)),
-        FOREIGN KEY (evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
-      )
-    ''');
+  CREATE TABLE CaracteristicasGenerales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    evaluacion_edificio_id INTEGER NOT NULL,
+    numero_pisos INTEGER,
+    numero_sotanos INTEGER,
+    frente REAL,
+    fondo REAL,
+    unidades_residenciales INTEGER,
+    unidades_no_habitadas INTEGER,
+    unidades_comerciales INTEGER,
+    ocupantes INTEGER,
+    acceso TEXT CHECK(acceso IN ('Obstruido', 'Libre')),
+    muertos INTEGER CHECK(muertos IN (0,1)),
+    heridos INTEGER CHECK(heridos IN (0,1)),
+    fecha_construccion TEXT,
+    FOREIGN KEY (evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
+  )
+''');
+
+    await db.execute('''
+  CREATE TABLE TipoSoporteCubierta (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    descripcion TEXT NOT NULL UNIQUE
+  )
+''');
+
+    await db.execute('''
+    CREATE TABLE RevestimientoCubierta (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      descripcion TEXT NOT NULL UNIQUE
+    )
+  ''');
+
+    await db.execute('''
+  CREATE TABLE SistemasCubierta (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    evaluacion_edificio_id INTEGER NOT NULL,
+    sistema TEXT NOT NULL,
+    materiales TEXT,
+    FOREIGN KEY (evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
+  )
+''');
 
     // Tabla UsosPredominantes
     await db.execute('''
@@ -149,6 +184,7 @@ class DatabaseHelper {
       CREATE TABLE EvaluacionUsos (
         evaluacion_edificio_id INTEGER NOT NULL,
         uso_predominante_id INTEGER NOT NULL,
+        fecha_construccion DATE,
         PRIMARY KEY (evaluacion_edificio_id, uso_predominante_id),
         FOREIGN KEY (evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id),
         FOREIGN KEY (uso_predominante_id) REFERENCES UsosPredominantes(id)
@@ -179,23 +215,48 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla SistemasCubierta
     await db.execute('''
-      CREATE TABLE SistemasCubierta (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tipo_soporte TEXT,
-        revestimiento TEXT
-      )
-    ''');
+  CREATE TABLE MurosDivisorios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    descripcion TEXT NOT NULL UNIQUE
+  )
+''');
 
-    // Tabla ElementosNoEstructurales
     await db.execute('''
-      CREATE TABLE ElementosNoEstructurales (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        muros_divisorios TEXT,
-        fachadas TEXT,
-        escaleras TEXT
-      )
+  CREATE TABLE Fachadas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    descripcion TEXT NOT NULL UNIQUE
+  )
+''');
+
+    await db.execute('''
+  CREATE TABLE Escaleras (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    descripcion TEXT NOT NULL UNIQUE
+  )
+''');
+
+    // Crear tabla ElementosNoEstructurales (ejemplo)
+    await db.execute('''
+    CREATE TABLE ElementosNoEstructurales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      evaluacion_edificio_id INTEGER NOT NULL,
+      muros_divisorios_mamposteria INTEGER DEFAULT 0,
+      muros_divisorios_tierra INTEGER DEFAULT 0,
+      muros_divisorios_bahareque INTEGER DEFAULT 0,
+      muros_divisorios_particiones INTEGER DEFAULT 0,
+      muros_divisorios_otro_texto TEXT,
+      fachadas_mamposteria INTEGER DEFAULT 0,
+      fachadas_tierra INTEGER DEFAULT 0,
+      fachadas_paneles INTEGER DEFAULT 0,
+      fachadas_flotante INTEGER DEFAULT 0,
+      fachadas_otro_texto TEXT,
+      escaleras_concreto INTEGER DEFAULT 0,
+      escaleras_metalica INTEGER DEFAULT 0,
+      escaleras_madera INTEGER DEFAULT 0,
+      escaleras_mixtas INTEGER DEFAULT 0,
+      escaleras_otro_texto TEXT
+    )
     ''');
 
     // Tabla DetalleEstructura
@@ -205,6 +266,8 @@ class DatabaseHelper {
         evaluacion_edificio_id INTEGER NOT NULL,
         sistema_estructural_id INTEGER,
         material_id INTEGER,
+        otro_sistema TEXT,
+        otro_material TEXT,
         sistemas_entrepiso_id INTEGER,
         sistemas_cubierta_id INTEGER,
         elementos_no_estructurales_id INTEGER,
@@ -227,9 +290,10 @@ class DatabaseHelper {
 
     // Tabla EvaluacionRiesgos (Relación Muchos a Muchos)
     await db.execute('''
-      CREATE TABLE EvaluacionRiesgos (
+      CREATE TABLE IF NOT EXISTS EvaluacionRiesgos (
         evaluacion_id INTEGER NOT NULL,
         riesgo_id INTEGER NOT NULL,
+        existe_riesgo INTEGER CHECK(existe_riesgo IN (0,1)) DEFAULT 0,
         compromete_estabilidad INTEGER CHECK(compromete_estabilidad IN (0,1)),
         compromete_accesos INTEGER CHECK(compromete_accesos IN (0,1)),
         PRIMARY KEY (evaluacion_id, riesgo_id),
@@ -243,6 +307,7 @@ class DatabaseHelper {
       CREATE TABLE DañosEvaluacion (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         evaluacion_edificio_id INTEGER NOT NULL,
+        porcentaje_afectacion TEXT CHECK(porcentaje_afectacion IN ('Ninguno','<10%','10-40%','40-70%','70%+')),
         colapso_total INTEGER CHECK(colapso_total IN (0,1)),
         colapso_parcial INTEGER CHECK(colapso_parcial IN (0,1)),
         riesgo_caidas INTEGER CHECK(riesgo_caidas IN (0,1)),
@@ -255,10 +320,11 @@ class DatabaseHelper {
     // Tabla NivelDaño
     await db.execute('''
       CREATE TABLE NivelDaño (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        porcentaje_afectacion TEXT CHECK(porcentaje_afectacion IN ('Ninguno', '<10%', '10-40%', '40-70%', '70%+')),
-        severidad_danos TEXT CHECK(severidad_danos IN ('Bajo', 'Medio', 'Alto'))
-      )
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      porcentaje_afectacion TEXT CHECK(porcentaje_afectacion IN ('Ninguno', '<10%', '10-40%', '40-70%', '70%+')),
+      severidad_danos TEXT CHECK(severidad_danos IN ('Bajo', 'Medio', 'Alto')),
+      categoria TEXT CHECK(categoria IN ('Sin daño','Leve','Moderado','Severo'))
+    );
     ''');
 
     // Tabla EvaluacionNivelDaño (Relación Muchos a Muchos)
@@ -298,6 +364,16 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE SistemasEstructurales (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evaluacion_edificio_id INTEGER NOT NULL,
+        sistema_estructural TEXT,
+        materiales TEXT,
+        FOREIGN KEY (evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
+      )
+    ''');
+
     // Tabla EvaluacionAcciones (Relación Muchos a Muchos)
     await db.execute('''
       CREATE TABLE EvaluacionAcciones (
@@ -309,18 +385,593 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS EvaluacionCondiciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evaluacion_edificio_id INTEGER NOT NULL,
+        condicion TEXT NOT NULL, -- ej: '5.1', '5.2', etc.
+        valor INTEGER CHECK(valor IN (0,1)), -- 0 = No, 1 = Si
+        FOREIGN KEY(evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS EvaluacionElementoDano (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evaluacion_edificio_id INTEGER NOT NULL,
+        elemento TEXT NOT NULL,  -- Ej: '5.7 Muros de carga', '5.8 Sistemas de contención', etc.
+        nivel_dano_id INTEGER NOT NULL,
+        FOREIGN KEY(evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id),
+        FOREIGN KEY(nivel_dano_id) REFERENCES NivelDaño(id)
+      )
+    ''');
+
     // Tabla EvaluacionAdicional
     await db.execute('''
       CREATE TABLE EvaluacionAdicional (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        detalle TEXT,
         evaluacion_id INTEGER NOT NULL,
         tipo_evaluacion TEXT CHECK(tipo_evaluacion IN ('Estructural', 'Geotécnica', 'Otro')),
         FOREIGN KEY (evaluacion_id) REFERENCES Evaluaciones(id)
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS EvaluacionSeveridadGlobal (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evaluacion_id INTEGER NOT NULL,
+        severidad_final TEXT CHECK(severidad_final IN ('Sin Daño','Bajo','Medio','Medio Alto','Alto')),
+        FOREIGN KEY(evaluacion_id) REFERENCES Evaluaciones(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS AlcanceEvaluacion (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evaluacion_edificio_id INTEGER NOT NULL,
+        exterior TEXT CHECK(exterior IN ('Completa','Parcial','Ninguno')),
+        interior TEXT CHECK(interior IN ('No Ingreso','Parcial','Completa','Ninguno')),
+        FOREIGN KEY(evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS EvaluacionAccionDetalle (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evaluacion_id INTEGER NOT NULL,
+        accion_recomendada_id INTEGER NOT NULL,
+        detalle TEXT,
+        FOREIGN KEY (evaluacion_id) REFERENCES Evaluaciones(id),
+        FOREIGN KEY (accion_recomendada_id) REFERENCES AccionesRecomendadas(id)
+      )
+    ''');
+
     // Insertar datos iniciales en tablas de referencia (Opcional)
     await _insertInitialData(db);
+  }
+
+  Future<Map<String, dynamic>?> getEvaluacionBasica(
+      int userId, int evaluacionId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> evals = await db.rawQuery('''
+      SELECT 
+        e.*,
+        t.descripcion as tipo_evento,
+        CASE 
+          WHEN t.id = 8 THEN e.otro_tipo_evento || ' (Otro)'
+          ELSE t.descripcion 
+        END as descripcion_evento
+      FROM Evaluaciones e
+      LEFT JOIN TipoEventos t ON e.tipo_evento_id = t.id
+      WHERE e.id = ? AND e.usuario_id = ?
+      LIMIT 1
+    ''', [evaluacionId, userId]);
+
+    if (evals.isEmpty) return null;
+    return evals.first;
+  }
+
+  Future<Map<String, dynamic>?> getEdificacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    // Primero, verificar la evaluación
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) {
+      return null;
+    }
+
+    // Obtener EvaluacionEdificio
+    final List<Map<String, dynamic>> evalEdifList = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (evalEdifList.isEmpty) return null;
+
+    final evaluacionEdificio = evalEdifList.first;
+    final edificioId = evaluacionEdificio['edificio_id'];
+
+    // Obtener datos del Edificio
+    final List<Map<String, dynamic>> edifList = await db.query(
+      'Edificios',
+      where: 'id = ?',
+      whereArgs: [edificioId],
+      limit: 1,
+    );
+
+    Map<String, dynamic>? edificio;
+    if (edifList.isNotEmpty) {
+      edificio = edifList.first;
+    }
+
+    // Obtener Contacto(s)
+    final contacto = await db.query(
+      'Contacto',
+      where: 'edificio_id = ?',
+      whereArgs: [edificioId],
+    );
+
+    return {
+      'evaluacion_edificio': evaluacionEdificio,
+      'edificio': edificio,
+      'contacto': contacto,
+    };
+  }
+
+  Future<Map<String, dynamic>> getCondicionesYElementos(int evaluacionEdificioId) async {
+  final db = await database;
+  final condiciones = await db.query(
+    'EvaluacionCondiciones',
+    where: 'evaluacion_edificio_id = ? AND condicion LIKE ?',
+    whereArgs: [evaluacionEdificioId, '5.%'],
+  );
+
+  final elementos = await db.query(
+    'EvaluacionElementoDano',
+    where: 'evaluacion_edificio_id = ? AND elemento LIKE ?',
+    whereArgs: [evaluacionEdificioId, '5.%'],
+  );
+
+  return {
+    'condiciones': condiciones,
+    'elementos': elementos,
+  };
+}
+
+
+  Future<Map<String, dynamic>?> getCaracteristicasGeneralesPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    // Verificar evaluación
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return null;
+
+    // Obtener EvaluacionEdificio para el evaluacionId
+    final List<Map<String, dynamic>> evalEdifList = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (evalEdifList.isEmpty) return null;
+
+    final evaluacionEdificioId = evalEdifList.first['id'];
+
+    // Obtener CaracteristicasGenerales
+    final List<Map<String, dynamic>> resultados = await db.query(
+      'CaracteristicasGenerales',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+      limit: 1,
+    );
+
+    if (resultados.isNotEmpty) {
+      return resultados.first;
+    }
+    return null;
+  }
+
+  // Método para obtener las características generales
+  Future<Map<String, dynamic>?> obtenerCaracteristicasGenerales(int evaluacionEdificioId) async {
+    final db = await database;
+    List<Map<String, dynamic>> resultado = await db.query(
+      'CaracteristicasGenerales',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+    if (resultado.isNotEmpty) {
+      return resultado.first;
+    } else {
+      return null;
+    }
+  }
+
+  // Método para obtener los usos predominantes
+  Future<List<Map<String, dynamic>>> obtenerEvaluacionUsos(int evaluacionEdificioId) async {
+    final db = await database;
+    List<Map<String, dynamic>> resultados = await db.query(
+      'EvaluacionUsos',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+    return resultados;
+  }
+
+  Future<List<Map<String, dynamic>>> getUsosPredominantesPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    // Verificar evaluación
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return [];
+
+    // Obtener evaluacion_edificio_id
+    final List<Map<String, dynamic>> evalEdifList = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (evalEdifList.isEmpty) return [];
+
+    final evaluacionEdificioId = evalEdifList.first['id'];
+
+    // Obtener Usos
+    return await db.rawQuery('''
+    SELECT UsosPredominantes.*
+    FROM UsosPredominantes
+    INNER JOIN EvaluacionUsos ON UsosPredominantes.id = EvaluacionUsos.uso_predominante_id
+    WHERE EvaluacionUsos.evaluacion_edificio_id = ?
+  ''', [evaluacionEdificioId]);
+  }
+
+  Future<Map<String, dynamic>?> getDetalleEstructuraPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return null;
+
+    final List<Map<String, dynamic>> evalEdifList = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+    if (evalEdifList.isEmpty) return null;
+    final evaluacionEdificioId = evalEdifList.first['id'];
+
+    // Obtener DetalleEstructura
+    final resultados = await db.query(
+      'DetalleEstructura',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+      limit: 1,
+    );
+
+    if (resultados.isNotEmpty) return resultados.first;
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getDaniosEvaluacionPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return null;
+
+    final List<Map<String, dynamic>> evalEdifList = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+    if (evalEdifList.isEmpty) return null;
+
+    final evaluacionEdificioId = evalEdifList.first['id'];
+
+    final resultados = await db.query(
+      'DañosEvaluacion',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+      limit: 1,
+    );
+
+    if (resultados.isNotEmpty) return resultados.first;
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getHabitabilidadPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    // Verificar la evaluación
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return null;
+
+    final resultados = await db.query(
+      'EvaluacionHabitabilidad',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (resultados.isEmpty) return null;
+
+    final habId = resultados.first['habitabilidad_id'];
+    final habRes = await db.query(
+      'Habitabilidad',
+      where: 'id = ?',
+      whereArgs: [habId],
+      limit: 1,
+    );
+    if (habRes.isNotEmpty) {
+      return habRes.first;
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getAccionesRecomendadasPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return [];
+
+    return await db.rawQuery('''
+    SELECT AccionesRecomendadas.*
+    FROM AccionesRecomendadas
+    INNER JOIN EvaluacionAcciones ON AccionesRecomendadas.id = EvaluacionAcciones.accion_recomendada_id
+    WHERE EvaluacionAcciones.evaluacion_id = ?
+  ''', [evaluacionId]);
+  }
+
+  Future<List<Map<String, dynamic>>> getRiesgosPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return [];
+
+    return await db.rawQuery('''
+    SELECT RiesgosExternos.*, EvaluacionRiesgos.compromete_estabilidad, EvaluacionRiesgos.compromete_accesos
+    FROM RiesgosExternos
+    INNER JOIN EvaluacionRiesgos ON RiesgosExternos.id = EvaluacionRiesgos.riesgo_id
+    WHERE EvaluacionRiesgos.evaluacion_id = ?
+  ''', [evaluacionId]);
+  }
+
+  Future<List<Map<String, dynamic>>> getEvaluacionAdicionalPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return [];
+
+    return await db.query(
+      'EvaluacionAdicional',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getElementosNoEstructuralesPorEvaluacion(
+      int userId, int evaluacionId) async {
+    final db = await database;
+
+    final evalBasica = await getEvaluacionBasica(userId, evaluacionId);
+    if (evalBasica == null) return [];
+
+    final evalEdifList = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+    if (evalEdifList.isEmpty) return [];
+
+    final evaluacionEdificioId = evalEdifList.first['id'];
+
+    return await db.query(
+      'ElementosNoEstructurales',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+  }
+
+  Future<int> insertarOActualizarElementoNoEstructural(
+      int evaluacionEdificioId, Map<String, dynamic> datos) async {
+    final db = await database;
+
+    // Verificar si ya existe un registro para este evaluacionEdificioId
+    final existe = await db.query(
+      'ElementosNoEstructurales',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+      limit: 1,
+    );
+
+    if (existe.isEmpty) {
+      // Insertar nuevo
+      datos['evaluacion_edificio_id'] = evaluacionEdificioId;
+      return await db.insert('ElementosNoEstructurales', datos);
+    } else {
+      // Actualizar existente
+      return await db.update(
+        'ElementosNoEstructurales',
+        datos,
+        where: 'evaluacion_edificio_id = ?',
+        whereArgs: [evaluacionEdificioId],
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> obtenerDatosEvaluacion(int evaluacionId) async {
+    final db = await database;
+
+    // 1. Obtener la evaluación principal
+    final List<Map<String, dynamic>> evals = await db.query(
+      'Evaluaciones',
+      where: 'id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (evals.isEmpty) {
+      return {}; // No se encontró la evaluación
+    }
+
+    final evaluacion = evals.first;
+
+    // 2. Obtener EvaluacionEdificio asociado a esta evaluación
+    final List<Map<String, dynamic>> evalEdifList = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    Map<String, dynamic>? evaluacionEdificio;
+    Map<String, dynamic>? edificio;
+    List<Map<String, dynamic>> contacto = [];
+    Map<String, dynamic>? caracteristicasGenerales;
+    List<Map<String, dynamic>> usosPredominantes = [];
+    Map<String, dynamic>? detalleEstructura;
+    Map<String, dynamic>? danosEvaluacion;
+    Map<String, dynamic>? habitabilidad;
+    List<Map<String, dynamic>> accionesRecomendadas = [];
+    List<Map<String, dynamic>> riesgosExternos = [];
+    List<Map<String, dynamic>> evaluacionAdicional = [];
+    List<Map<String, dynamic>> elementosNoEstructurales = [];
+
+    if (evalEdifList.isNotEmpty) {
+      evaluacionEdificio = evalEdifList.first;
+      int evaluacionEdificioId = evaluacionEdificio['id'];
+      int edificioId = evaluacionEdificio['edificio_id'];
+
+      // 3. Obtener datos del Edificio
+      final List<Map<String, dynamic>> edifList = await db.query(
+        'Edificios',
+        where: 'id = ?',
+        whereArgs: [edificioId],
+        limit: 1,
+      );
+      if (edifList.isNotEmpty) {
+        edificio = edifList.first;
+      }
+
+      // 4. Obtener Contacto(s) del edificio
+      contacto = await db.query(
+        'Contacto',
+        where: 'edificio_id = ?',
+        whereArgs: [edificioId],
+      );
+
+      // 5. Características Generales
+      caracteristicasGenerales =
+          await obtenerCaracteristicasGenerales(evaluacionEdificioId);
+
+      // 6. Usos Predominantes
+      usosPredominantes =
+          await obtenerUsosPorEvaluacionEdificio(evaluacionEdificioId);
+
+      // 7. Detalle Estructura
+      detalleEstructura = await obtenerDetalleEstructura(evaluacionEdificioId);
+
+      // 8. Daños Evaluacion
+      danosEvaluacion = await obtenerDaniosEvaluacion(evaluacionEdificioId);
+
+      // 9. Habitabilidad
+      habitabilidad = await obtenerHabitabilidadPorEvaluacion(evaluacionId);
+
+      // 10. Acciones Recomendadas
+      accionesRecomendadas = await obtenerAccionesPorEvaluacion(evaluacionId);
+
+      // 11. Riesgos Externos
+      riesgosExternos = await obtenerRiesgosPorEvaluacion(evaluacionId);
+
+      // 12. Evaluación Adicional
+      evaluacionAdicional = await obtenerEvaluacionAdicional(evaluacionId);
+
+      // 13. Elementos No Estructurales (si quisieras traerlos)
+      elementosNoEstructurales = await db.query(
+        'ElementosNoEstructurales',
+        where: 'evaluacion_edificio_id = ?',
+        whereArgs: [evaluacionEdificioId],
+      );
+    }
+
+    // Combinar todos los datos en un mapa
+    Map<String, dynamic> datos = {
+      'evaluacion': evaluacion,
+      'evaluacion_edificio': evaluacionEdificio,
+      'edificio': edificio,
+      'contacto': contacto,
+      'caracteristicas_generales': caracteristicasGenerales,
+      'usos_predominantes': usosPredominantes,
+      'detalle_estructura': detalleEstructura,
+      'danos_evaluacion': danosEvaluacion,
+      'habitabilidad': habitabilidad,
+      'acciones_recomendadas': accionesRecomendadas,
+      'riesgos_externos': riesgosExternos,
+      'evaluacion_adicional': evaluacionAdicional,
+      'elementos_no_estructurales': elementosNoEstructurales,
+    };
+
+    return datos;
+  }
+
+  Future<int?> obtenerIdUsoPorDescripcion(String descripcion) async {
+    final db = await database;
+
+    final resultado = await db.query(
+      'UsosPredominantes',
+      columns: ['id'],
+      where: 'descripcion = ?',
+      whereArgs: [descripcion],
+      limit: 1,
+    );
+    if (resultado.isNotEmpty) {
+      return resultado.first['id'] as int;
+    } else {
+      return null;
+    }
+  }
+
+  // Insertar EvaluacionUso
+  Future<int> insertarEvaluacionUso(Map<String, dynamic> evaluacionUso) async {
+    final db = await database;
+    return await db.insert('EvaluacionUsos', evaluacionUso);
+  }
+
+  // Agregar Uso a la Evaluación
+  Future<void> agregarUsoEvaluacion(int evaluacionEdificioId,
+      String usoDescripcion, String fechaConstruccion) async {
+    final usoId =
+        await obtenerIdUsoPorDescripcion(usoDescripcion.toLowerCase());
+    if (usoId == null) {
+      // Si no existe, se crea el nuevo uso
+      final nuevoId = await insertarUsoPredominante(
+          {'descripcion': usoDescripcion.toLowerCase()});
+      await insertarEvaluacionUso({
+        'evaluacion_edificio_id': evaluacionEdificioId,
+        'uso_predominante_id': nuevoId,
+        'fecha_construccion': fechaConstruccion,
+      });
+    } else {
+      await insertarEvaluacionUso({
+        'evaluacion_edificio_id': evaluacionEdificioId,
+        'uso_predominante_id': usoId,
+        'fecha_construccion': fechaConstruccion,
+      });
+    }
   }
 
   // Migraciones de la base de datos
@@ -363,17 +1014,15 @@ class DatabaseHelper {
       await db.insert('TipoEventos', {'descripcion': evento});
     }
 
-    // Insertar UsosPredominantes
-    List<String> usos = [
-      'Residencial',
-      'Educativo',
-      'Industrial',
-      'Comercial',
-      'Otro',
-    ];
-    for (var uso in usos) {
-      await db.insert('UsosPredominantes', {'descripcion': uso});
-    }
+    await db.insert('UsosPredominantes', {'descripcion': 'residencial'});
+    await db.insert('UsosPredominantes', {'descripcion': 'educativo'});
+    await db.insert('UsosPredominantes', {'descripcion': 'comercial'});
+    await db.insert('UsosPredominantes', {'descripcion': 'industrial'});
+    await db.insert('UsosPredominantes', {'descripcion': 'almacenamiento'});
+    await db.insert('UsosPredominantes', {'descripcion': 'reunion'});
+    await db.insert('UsosPredominantes', {'descripcion': 'parqueaderos'});
+    await db.insert('UsosPredominantes', {'descripcion': 'servicios_publicos'});
+    await db.insert('UsosPredominantes', {'descripcion': 'otro'});
 
     // Insertar RiesgosExternos
     List<String> riesgos = [
@@ -500,6 +1149,26 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<int> insertarTipoEventoOtro(String descripcion) async {
+    final db = await database;
+    // Insertar nuevo tipo de evento "Otro" con la descripción específica
+    return await db.insert('TipoEventos', {'descripcion': descripcion});
+  }
+
+  Future<Map<String, dynamic>?> obtenerTipoEvento(int id) async {
+    final db = await database;
+    final result = await db.query(
+      'TipoEventos',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (result.isNotEmpty) {
+      return result.first;
+    }
+    return null;
   }
 
   // --------------------
@@ -681,21 +1350,6 @@ class DatabaseHelper {
     return await db.insert('CaracteristicasGenerales', caracteristicas);
   }
 
-  // Obtener CaracteristicasGenerales por evaluacion_edificio_id
-  Future<Map<String, dynamic>?> obtenerCaracteristicasGenerales(
-      int evaluacionEdificioId) async {
-    final db = await database;
-    List<Map<String, dynamic>> resultados = await db.query(
-      'CaracteristicasGenerales',
-      where: 'evaluacion_edificio_id = ?',
-      whereArgs: [evaluacionEdificioId],
-    );
-    if (resultados.isNotEmpty) {
-      return resultados.first;
-    }
-    return null;
-  }
-
   // Actualizar CaracteristicasGenerales
   Future<int> actualizarCaracteristicasGenerales(
       int id, Map<String, dynamic> caracteristicas) async {
@@ -738,12 +1392,6 @@ class DatabaseHelper {
   // Métodos CRUD para EvaluacionUsos
   // --------------------
 
-  // Insertar una nueva EvaluacionUso
-  Future<int> insertarEvaluacionUso(Map<String, dynamic> evaluacionUso) async {
-    final db = await database;
-    return await db.insert('EvaluacionUsos', evaluacionUso);
-  }
-
   // Obtener UsosPredominantes por evaluacion_edificio_id
   Future<List<Map<String, dynamic>>> obtenerUsosPorEvaluacionEdificio(
       int evaluacionEdificioId) async {
@@ -764,6 +1412,18 @@ class DatabaseHelper {
   Future<int> insertarSistemaEstructural(Map<String, dynamic> sistema) async {
     final db = await database;
     return await db.insert('SistemaEstructural', sistema);
+  }
+
+  Future<void> insertarSistemaEstructuralMaterial(
+      Map<String, dynamic> datosSistema) async {
+    final db = await database;
+
+    // Insertar en la tabla SistemasEstructurales
+    await db.insert('SistemasEstructurales', {
+      'evaluacion_edificio_id': datosSistema['evaluacion_edificio_id'],
+      'sistema_estructural': datosSistema['sistema_estructural'],
+      'materiales': datosSistema['materiales'],
+    });
   }
 
   // Obtener todos los SistemasEstructurales
@@ -928,13 +1588,15 @@ class DatabaseHelper {
   // Métodos CRUD para EvaluacionRiesgos
   // --------------------
 
-  // Insertar una nueva EvaluacionRiesgo
-  Future<int> insertarEvaluacionRiesgo(
-      Map<String, dynamic> evaluacionRiesgo) async {
+  // Ejemplo de método para insertar en EvaluacionRiesgos
+  Future<void> insertarEvaluacionRiesgo(Map<String, dynamic> datos) async {
     final db = await database;
-    return await db.insert('EvaluacionRiesgos', evaluacionRiesgo);
+    await db.insert(
+      'EvaluacionRiesgos',
+      datos,
+      conflictAlgorithm: ConflictAlgorithm.replace, // Opcional según tu lógica
+    );
   }
-
   // Obtener Riesgos por evaluacion_id
   Future<List<Map<String, dynamic>>> obtenerRiesgosPorEvaluacion(
       int evaluacionId) async {
@@ -1087,6 +1749,69 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> insertarOActualizarEvaluacionCondicion(int evaluacionEdificioId, String condicion, int valor) async {
+  final db = await database;
+
+  // Verificar si ya existe el registro
+  final existe = await db.query(
+    'EvaluacionCondiciones',
+    where: 'evaluacion_edificio_id = ? AND condicion = ?',
+    whereArgs: [evaluacionEdificioId, condicion],
+    limit: 1,
+  );
+
+  if (existe.isEmpty) {
+    // Insertar nuevo
+    await db.insert('EvaluacionCondiciones', {
+      'evaluacion_edificio_id': evaluacionEdificioId,
+      'condicion': condicion,
+      'valor': valor,
+    });
+  } else {
+    // Actualizar existente
+    await db.update('EvaluacionCondiciones', {
+      'valor': valor,
+    },
+    where: 'evaluacion_edificio_id = ? AND condicion = ?',
+    whereArgs: [evaluacionEdificioId, condicion]);
+  }
+}
+
+Future<void> insertarOActualizarEvaluacionElementoDano(int evaluacionEdificioId, String elemento, int nivelDanoId) async {
+  final db = await database;
+
+  // Verificar si ya existe el registro
+  final existe = await db.query(
+    'EvaluacionElementoDano',
+    where: 'evaluacion_edificio_id = ? AND elemento = ?',
+    whereArgs: [evaluacionEdificioId, elemento],
+    limit: 1,
+  );
+
+  if (existe.isEmpty) {
+    await db.insert('EvaluacionElementoDano', {
+      'evaluacion_edificio_id': evaluacionEdificioId,
+      'elemento': elemento,
+      'nivel_dano_id': nivelDanoId,
+    });
+  } else {
+    await db.update('EvaluacionElementoDano', {
+      'nivel_dano_id': nivelDanoId,
+    },
+    where: 'evaluacion_edificio_id = ? AND elemento = ?',
+    whereArgs: [evaluacionEdificioId, elemento]);
+  }
+}
+
+  Future<void> eliminarEvaluacionRiesgosPorEvaluacion(int evaluacionId) async {
+    final db = await database;
+    await db.delete(
+      'EvaluacionRiesgos',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+    );
+  }
+
   // Eliminar EvaluacionHabitabilidad
   Future<int> eliminarEvaluacionHabitabilidad(int evaluacionId) async {
     final db = await database;
@@ -1100,6 +1825,7 @@ class DatabaseHelper {
   // --------------------
   // Métodos CRUD para AccionesRecomendadas
   // --------------------
+
 
   // Insertar una nueva AccionRecomendada
   Future<int> insertarAccionRecomendada(Map<String, dynamic> accion) async {
@@ -1190,9 +1916,15 @@ class DatabaseHelper {
   // --------------------
   // Similar al patrón de los anteriores métodos CRUD
 
-  // --------------------
-  // Otros métodos que necesites agregar
-  // --------------------
+  Future<void> insertarAlcanceEvaluacion(Map<String, dynamic> datos) async {
+    final db = await database;
+
+    await db.insert(
+      'AlcanceEvaluacion',
+      datos,
+      conflictAlgorithm: ConflictAlgorithm.replace, // Reemplaza si existe
+    );
+  }
 
   // Cierra la base de datos
   Future<void> cerrarBaseDeDatos() async {
@@ -1323,13 +2055,21 @@ class DatabaseHelper {
   }) async {
     final db = await database;
 
-    // 1. Insertar edificio
+    /// 1. Insertar edificio - Corregir nombre de columna
     final edificioId = await db.insert('Edificios', {
-      'nombre': datosGenerales['nombre_edificacion'],
+      'nombre_edificacion': datosGenerales['nombre_edificacion'],
       'municipio': datosGenerales['municipio'],
+      'comuna': datosGenerales['comuna'], // Agregar comuna
       'barrio_vereda': datosGenerales['barrio_vereda'],
-      'direccion': datosGenerales['direccion'],
       'tipo_propiedad': datosGenerales['tipo_propiedad'],
+      'departamento': datosGenerales['departamento'],
+      'tipo_via': datosGenerales['tipo_via'],
+      'numero_via': datosGenerales['numero_via'],
+      'apendice_via': datosGenerales['apendice_via'],
+      'orientacion': datosGenerales['orientacion'],
+      'numero_cruce': datosGenerales['numero_cruce'],
+      'orientacion_cruce': datosGenerales['orientacion_cruce'],
+      'complemento_direccion': datosGenerales['complemento_direccion'],
     });
 
     // 2. Insertar evaluación edificio
@@ -1405,4 +2145,92 @@ class DatabaseHelper {
   }
 
   // ... Puedes añadir más métodos según las necesidades de tu aplicación ...
+
+  Future<void> insertarDatosSeccion3() async {
+    final db = await database;
+
+    // 3.2 Usos Predominantes
+    await db.insert('UsosPredominantes', {'descripcion': 'Residencial'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Educativo'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Institucional'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Industrial'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Comercial'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Oficina'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Salud'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Seguridad'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Almacenamiento'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Reunión'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Parqueaderos'});
+    await db.insert('UsosPredominantes', {'descripcion': 'Servicios Públicos'});
+
+    // 3.3.1 Sistema Estructural
+    await db.insert('SistemaEstructural', {'descripcion': 'Muros de carga'});
+    await db.insert('SistemaEstructural', {'descripcion': 'Pórticos'});
+    await db.insert('SistemaEstructural', {'descripcion': 'Combinado'});
+    await db.insert('SistemaEstructural', {'descripcion': 'Dual'});
+    await db.insert('SistemaEstructural', {'descripcion': 'No es claro'});
+
+    // 3.3.2 Materiales
+    await db.insert('Materiales', {'descripcion': 'Mampostería simple'});
+    await db.insert('Materiales', {'descripcion': 'Mampostería confinada'});
+    await db.insert('Materiales', {'descripcion': 'Mampostería reforzada'});
+    await db
+        .insert('Materiales', {'descripcion': 'Mampostería semi-confinada'});
+    await db.insert('Materiales', {'descripcion': 'Mampostería en adobe'});
+    await db.insert('Materiales', {'descripcion': 'Madera'});
+    await db.insert('Materiales', {'descripcion': 'Guadua'});
+    await db.insert('Materiales', {'descripcion': 'Bahareque'});
+    await db.insert('Materiales', {'descripcion': 'Tierra o tapia pisada'});
+    await db.insert('Materiales', {'descripcion': 'Concreto prefabricado'});
+    await db.insert('Materiales', {'descripcion': 'Concreto no arriostrado'});
+    await db.insert('Materiales', {'descripcion': 'Concreto arriostrado'});
+    await db.insert('Materiales', {'descripcion': 'Acero no arriostrado'});
+    await db.insert('Materiales', {'descripcion': 'Acero arriostrado'});
+
+    // 3.4 Sistemas de Entrepiso
+    await db.insert('SistemasEntrepiso', {'descripcion': 'Losa maciza'});
+    await db.insert('SistemasEntrepiso', {'descripcion': 'Vigas de acero'});
+    await db.insert('SistemasEntrepiso', {'descripcion': 'Vigas de madera'});
+    await db.insert('SistemasEntrepiso', {'descripcion': 'Viguetas'});
+    await db.insert('SistemasEntrepiso', {'descripcion': 'Cerchas'});
+    await db.insert('SistemasEntrepiso', {'descripcion': 'Viga con tabla'});
+    await db.insert('SistemasEntrepiso', {'descripcion': 'Loseta'});
+
+    // 3.5.1 Sistema de Soporte de Cubierta
+    await db.insert('TipoSoporteCubierta', {'descripcion': 'Vigas de madera'});
+    await db.insert('TipoSoporteCubierta', {'descripcion': 'Vigas de acero'});
+    await db
+        .insert('TipoSoporteCubierta', {'descripcion': 'Vigas de concreto'});
+    await db
+        .insert('TipoSoporteCubierta', {'descripcion': 'Cerchas de madera'});
+    await db
+        .insert('TipoSoporteCubierta', {'descripcion': 'Cerchas metálicas'});
+
+    // 3.5.2 Revestimiento de Cubierta
+    await db.insert('RevestimientoCubierta', {'descripcion': 'Teja de zinc'});
+    await db.insert('RevestimientoCubierta', {'descripcion': 'Teja de barro'});
+    await db.insert(
+        'RevestimientoCubierta', {'descripcion': 'Teja de asbesto cemento'});
+    await db.insert('RevestimientoCubierta', {'descripcion': 'Teja plástica'});
+    await db
+        .insert('RevestimientoCubierta', {'descripcion': 'Losa de concreto'});
+
+    // 3.6.1 Muros Divisorios
+    await db.insert('MurosDivisorios', {'descripcion': 'Mampostería'});
+    await db.insert('MurosDivisorios', {'descripcion': 'Tierra'});
+    await db.insert('MurosDivisorios', {'descripcion': 'Bahareque'});
+    await db.insert('MurosDivisorios', {'descripcion': 'Particiones livianas'});
+
+    // 3.6.2 Fachadas
+    await db.insert('Fachadas', {'descripcion': 'Mampostería'});
+    await db.insert('Fachadas', {'descripcion': 'Paneles'});
+    await db.insert('Fachadas', {'descripcion': 'Vidrio'});
+    await db.insert('Fachadas', {'descripcion': 'Madera'});
+
+    // 3.6.3 Escaleras
+    await db.insert('Escaleras', {'descripcion': 'Concreto'});
+    await db.insert('Escaleras', {'descripcion': 'Metálica'});
+    await db.insert('Escaleras', {'descripcion': 'Madera'});
+    await db.insert('Escaleras', {'descripcion': 'Mixta'});
+  }
 }

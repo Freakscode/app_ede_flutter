@@ -1,112 +1,263 @@
+// lib/screens/identificacion_edificacion/datos_generales_subseccion.dart
+
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/material.dart';
 
-class DatosGeneralesSubseccion extends StatelessWidget {
+class DatosGeneralesSubseccion extends StatefulWidget {
   final TextEditingController nombreEdificacionController;
   final TextEditingController municipioController;
   final TextEditingController barrioVeredaController;
-  final TextEditingController direccionController;
   final TextEditingController tipoPropiedadController;
+  final TextEditingController comunaController;
+  final TextEditingController departamentoController;
 
   const DatosGeneralesSubseccion({
-    super.key,
+    Key? key,
     required this.nombreEdificacionController,
     required this.municipioController,
+    required this.comunaController,
     required this.barrioVeredaController,
-    required this.direccionController,
     required this.tipoPropiedadController,
-  });
+    required this.departamentoController,
+  }) : super(key: key);
+
+  @override
+  State<DatosGeneralesSubseccion> createState() => _DatosGeneralesSubseccionState();
+}
+
+class _DatosGeneralesSubseccionState extends State<DatosGeneralesSubseccion> {
+  final List<String> departamentos = [
+    'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bolívar',
+    'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca',
+    'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía',
+    'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta',
+    'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío',
+    'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre',
+    'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada'
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Nombre de la Edificación
-          TextFormField(
-            controller: nombreEdificacionController,
-            decoration: const InputDecoration(
-              labelText: 'Nombre de la Edificación',
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingrese el nombre de la edificación';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          // Municipio
-          TextFormField(
-            controller: municipioController,
-            decoration: const InputDecoration(
-              labelText: 'Municipio',
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingrese el municipio';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          // Barrio / Vereda
-          TextFormField(
-            controller: barrioVeredaController,
-            decoration: const InputDecoration(
-              labelText: 'Barrio / Vereda',
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingrese el barrio o vereda';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          // Dirección
-          TextFormField(
-            controller: direccionController,
-            decoration: const InputDecoration(
-              labelText: 'Dirección',
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingrese la dirección';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          // Tipo de Propiedad
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+    final azulOscuro = const Color(0xFF002855);
+    final amarillo = const Color(0xFFFAD502);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: azulOscuro,
+        title: const Text(
+          'IDENTIFICACIÓN DE LA EDIFICACIÓN',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Icon(Icons.account_circle, size: 30, color: Colors.white),
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  tipoPropiedadController.text = 'Pública';
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: tipoPropiedadController.text == 'Pública'
-                      ? Colors.blue
-                      : Colors.grey,
-                ),
-                child: const Text('Pública'),
+              const Icon(
+                Icons.home,
+                size: 80,
+                color: Color(0xFF002855),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  tipoPropiedadController.text = 'Privada';
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: tipoPropiedadController.text == 'Privada'
-                      ? Colors.blue
-                      : Colors.grey,
+              const SizedBox(height: 20),
+              const Text(
+                'DATOS GENERALES',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF002855),
                 ),
-                child: const Text('Privada'),
+                textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 20),
+
+              _buildTextField(
+                controller: widget.nombreEdificacionController,
+                labelText: 'Nombre de la edificación',
+              ),
+              const SizedBox(height: 16),
+
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Departamento *',
+                  labelStyle: const TextStyle(color: Color(0xFF002855)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF002855)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF002855), width: 2),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+                value: widget.departamentoController.text.isEmpty ? null : widget.departamentoController.text,
+                items: departamentos.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor seleccione un departamento';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    widget.departamentoController.text = value ?? '';
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+
+              _buildTextField(
+                controller: widget.municipioController,
+                labelText: 'Municipio *',
+                requiredField: true,
+              ),
+              const SizedBox(height: 16),
+
+              _buildTextField(
+                controller: widget.comunaController,
+                labelText: 'Comuna *',
+                requiredField: true,
+              ),
+              const SizedBox(height: 16),
+
+              _buildTextField(
+                controller: widget.barrioVeredaController,
+                labelText: 'Barrio / Vereda *',
+                requiredField: true,
+              ),
+              const SizedBox(height: 16),
+
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '*Tipo de propiedad',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF002855),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTipoPropiedadButton(
+                      label: 'PÚBLICA',
+                      isSelected: widget.tipoPropiedadController.text == 'Pública',
+                      onTap: () {
+                        setState(() {
+                          widget.tipoPropiedadController.text = 'Pública';
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildTipoPropiedadButton(
+                      label: 'PRIVADA',
+                      isSelected: widget.tipoPropiedadController.text == 'Privada',
+                      onTap: () {
+                        setState(() {
+                          widget.tipoPropiedadController.text = 'Privada';
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
             ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    bool requiredField = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(color: Color(0xFF002855)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF002855)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF002855), width: 2),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        filled: true,
+        fillColor: Colors.grey[100],
+      ),
+      validator: (value) {
+        if (requiredField && (value == null || value.isEmpty)) {
+          return 'Este campo es obligatorio';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildTipoPropiedadButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final azulOscuro = const Color(0xFF002342);
+    final amarillo = const Color(0xFFFAD502);
+    final blanco = const Color(0xFFFFFFFF);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? azulOscuro : blanco,
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: amarillo,
+                  width: 2,
+                ),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isSelected ? blanco : azulOscuro,
+          ),
+        ),
       ),
     );
   }

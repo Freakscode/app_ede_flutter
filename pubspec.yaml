@@ -15,7 +15,9 @@ dependencies:
   path: ^1.9.0
   intl: ^0.20.1
   image_picker: ^1.1.2
-
+  google_maps_flutter: ^2.10.0
+  geocoding: ^3.0.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

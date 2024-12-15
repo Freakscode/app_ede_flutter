@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
 
 class SegundaSubseccion extends StatefulWidget {
@@ -19,9 +17,6 @@ class SegundaSubseccion extends StatefulWidget {
 }
 
 class _SegundaSubseccionState extends State<SegundaSubseccion> {
-  // No es necesario definir _selectedEventoId aquí
-
-  // Lista de eventos con sus etiquetas e iconos
   final List<Map<String, dynamic>> eventos = [
     {
       'label': 'Inundación',
@@ -65,13 +60,21 @@ class _SegundaSubseccionState extends State<SegundaSubseccion> {
     },
   ];
 
+  final TextEditingController _otroEventoController = TextEditingController();
+  bool _mostrarCampoOtro = false;
+
+  @override
+  void dispose() {
+    _otroEventoController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          // Título del Panel
           const Text(
             'IDENTIFICACIÓN DE EVALUACIÓN',
             style: TextStyle(
@@ -81,27 +84,30 @@ class _SegundaSubseccionState extends State<SegundaSubseccion> {
             ),
           ),
           const SizedBox(height: 20),
-          // Instrucción
           const Text(
             'Seleccionar un solo evento',
             style: TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 20),
-          // Cuadrícula de Eventos
           Expanded(
             child: GridView.count(
-              crossAxisCount: 2, // 2 columnas
+              crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
               childAspectRatio: 1.5,
               children: eventos.map((evento) {
-                // Verificar si este evento está seleccionado
                 final isSelected = widget.selectedEventoId == evento['tipoEventoId'];
                 return GestureDetector(
                   onTap: () async {
-                    // Simplemente llamar al callback sin validaciones
-                    await widget.onEventoSeleccionado(evento['label'], evento['tipoEventoId']);
-                    // Forzamos la reconstrucción para reflejar el cambio
+                    if (evento['tipoEventoId'] == 8) { // ID para "Otro"
+                      setState(() => _mostrarCampoOtro = true);
+                    } else {
+                      setState(() => _mostrarCampoOtro = false);
+                    }
+                    await widget.onEventoSeleccionado(
+                      evento['tipoEventoId'] == 8 ? _otroEventoController.text : evento['label'],
+                      evento['tipoEventoId']
+                    );
                     setState(() {});
                   },
                   child: Container(
@@ -116,18 +122,16 @@ class _SegundaSubseccionState extends State<SegundaSubseccion> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Ícono del Evento
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Image.asset(
                               evento['iconPath'],
-                              color: isSelected ? Colors.blue : Colors.blue,
+                              color: Colors.blue,
                               fit: BoxFit.contain,
                             ),
                           ),
                         ),
-                        // Etiqueta del Evento
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
@@ -136,7 +140,7 @@ class _SegundaSubseccionState extends State<SegundaSubseccion> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: isSelected ? Colors.blue : Color(0xFF002855),
+                              color: isSelected ? Colors.blue : const Color(0xFF002855),
                             ),
                           ),
                         ),
@@ -147,12 +151,38 @@ class _SegundaSubseccionState extends State<SegundaSubseccion> {
               }).toList(),
             ),
           ),
+
+          if (_mostrarCampoOtro) ...[
+            const SizedBox(height: 16),
+            TextField(
+              controller: _otroEventoController,
+              decoration: const InputDecoration(
+                labelText: 'Especifique el tipo de evento',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) async {
+                if (widget.selectedEventoId == 8) {
+                  await widget.onEventoSeleccionado(value, 8);
+                }
+              },
+            ),
+          ],
+
           const SizedBox(height: 20),
-          // Botón Continuar
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: widget.onContinue, // Sin validaciones adicionales
+              onPressed: () {
+                if (widget.selectedEventoId == 8 && _otroEventoController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Por favor, especifique el tipo de evento'),
+                    ),
+                  );
+                  return;
+                }
+                widget.onContinue();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.yellow[700],
                 foregroundColor: Colors.black,

@@ -1,4 +1,7 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class IdentificacionCatastralSubseccion extends StatefulWidget {
   final TextEditingController medellinController;
@@ -7,22 +10,70 @@ class IdentificacionCatastralSubseccion extends StatefulWidget {
   final TextEditingController longitudController;
 
   const IdentificacionCatastralSubseccion({
-    Key? key,
+    super.key,
     required this.medellinController,
     required this.areaMetropolitanaController,
     required this.latitudController,
     required this.longitudController,
-  }) : super(key: key);
+  });
 
   @override
-  _IdentificacionCatastralSubseccionState createState() => _IdentificacionCatastralSubseccionState();
+  // ignore: library_private_types_in_public_api
+  _IdentificacionCatastralSubseccionState createState() =>
+      _IdentificacionCatastralSubseccionState();
 }
 
-class _IdentificacionCatastralSubseccionState extends State<IdentificacionCatastralSubseccion> {
-  String _tipoSeleccionado = ''; // Inicialmente ningún tipo seleccionado
+class _IdentificacionCatastralSubseccionState
+    extends State<IdentificacionCatastralSubseccion> {
+  String _tipoSeleccionado = '';
+  GoogleMapController? _mapController;
+
+  final CameraPosition _initialPosition = const CameraPosition(
+    target: LatLng(6.244203, -75.581212), // Ejemplo: Medellín
+    zoom: 13.0,
+  );
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+  }
+
+  void _onMapTap(LatLng latLng) {
+    setState(() {
+      widget.latitudController.text = latLng.latitude.toStringAsFixed(6);
+      widget.longitudController.text = latLng.longitude.toStringAsFixed(6);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            'Coordenadas seleccionadas: ${latLng.latitude}, ${latLng.longitude}'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Identificación Catastral'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: _initialPosition,
+              onTap: _onMapTap,
+              mapType: MapType.normal,
+              // Puedes agregar más configuraciones aquí, como marcadores, myLocationEnabled, etc.
+            ),
+          ),
+          _buildFormFields(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormFields() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -31,39 +82,37 @@ class _IdentificacionCatastralSubseccionState extends State<IdentificacionCatast
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Botón Medellín
               ElevatedButton(
                 onPressed: () {
                   setState(() {
                     _tipoSeleccionado = 'Medellín';
-                    // Limpiar el controlador de Área Metropolitana para evitar datos inconsistentes
                     widget.areaMetropolitanaController.clear();
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _tipoSeleccionado == 'Medellín' ? Colors.blue : Colors.grey,
+                  backgroundColor:
+                      _tipoSeleccionado == 'Medellín' ? Colors.blue : Colors.grey,
                 ),
                 child: const Text('Medellín'),
               ),
               const SizedBox(width: 16),
-              // Botón Área Metropolitana
               ElevatedButton(
                 onPressed: () {
                   setState(() {
                     _tipoSeleccionado = 'Área Metropolitana';
-                    // Limpiar el controlador de Medellín para evitar datos inconsistentes
                     widget.medellinController.clear();
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _tipoSeleccionado == 'Área Metropolitana' ? Colors.blue : Colors.grey,
+                  backgroundColor: _tipoSeleccionado == 'Área Metropolitana'
+                      ? Colors.blue
+                      : Colors.grey,
                 ),
                 child: const Text('Área Metropolitana'),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          // Mostrar campo según selección
           if (_tipoSeleccionado == 'Medellín')
             TextFormField(
               controller: widget.medellinController,
