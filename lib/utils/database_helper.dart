@@ -472,6 +472,40 @@ class DatabaseHelper {
     return evals.first;
   }
 
+  Future<int> insertarEvaluacionAdicional(Map<String, dynamic> evaluacionAdicional) async {
+  final db = await database;
+  return await db.insert('EvaluacionAdicional', evaluacionAdicional);
+}
+
+Future<List<Map<String, dynamic>>> obtenerEvaluacionAdicional(int evaluacionId) async {
+  final db = await database;
+  return await db.query(
+    'EvaluacionAdicional',
+    where: 'evaluacion_id = ?',
+    whereArgs: [evaluacionId],
+  );
+}
+
+Future<int> actualizarEvaluacionAdicional(int id, Map<String, dynamic> evaluacionAdicional) async {
+  final db = await database;
+  return await db.update(
+    'EvaluacionAdicional',
+    evaluacionAdicional,
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+}
+
+Future<int> eliminarEvaluacionAdicional(int id) async {
+  final db = await database;
+  return await db.delete(
+    'EvaluacionAdicional',
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+}
+
+
   Future<Map<String, dynamic>?> getEdificacion(
       int userId, int evaluacionId) async {
     final db = await database;
@@ -1829,15 +1863,17 @@ Future<void> insertarOActualizarEvaluacionElementoDano(int evaluacionEdificioId,
 
   // Insertar una nueva AccionRecomendada
   Future<int> insertarAccionRecomendada(Map<String, dynamic> accion) async {
-    final db = await database;
-    return await db.insert('AccionesRecomendadas', accion);
-  }
+  final db = await database;
+  return await db.insert('AccionesRecomendadas', accion);
+}
+
 
   // Obtener todas las AccionesRecomendadas
   Future<List<Map<String, dynamic>>> obtenerAccionesRecomendadas() async {
-    final db = await database;
-    return await db.query('AccionesRecomendadas');
-  }
+  final db = await database;
+  return await db.query('AccionesRecomendadas');
+}
+
 
   // --------------------
   // Métodos CRUD para EvaluacionAcciones
@@ -1851,70 +1887,23 @@ Future<void> insertarOActualizarEvaluacionElementoDano(int evaluacionEdificioId,
   }
 
   // Obtener AccionesRecomendadas por evaluacion_id
-  Future<List<Map<String, dynamic>>> obtenerAccionesPorEvaluacion(
-      int evaluacionId) async {
-    final db = await database;
-    return await db.rawQuery('''
-      SELECT AccionesRecomendadas.*
-      FROM AccionesRecomendadas
-      INNER JOIN EvaluacionAcciones ON AccionesRecomendadas.id = EvaluacionAcciones.accion_recomendada_id
-      WHERE EvaluacionAcciones.evaluacion_id = ?
-    ''', [evaluacionId]);
-  }
+  Future<List<Map<String, dynamic>>> obtenerAccionesPorEvaluacion(int evaluacionId) async {
+  final db = await database;
+  return await db.rawQuery('''
+    SELECT AccionesRecomendadas.*
+    FROM AccionesRecomendadas
+    INNER JOIN EvaluacionAcciones ON AccionesRecomendadas.id = EvaluacionAcciones.accion_recomendada_id
+    WHERE EvaluacionAcciones.evaluacion_id = ?
+  ''', [evaluacionId]);
+}
 
-  // --------------------
-  // Métodos CRUD para EvaluacionAdicional
-  // --------------------
-
-  // Insertar una nueva EvaluacionAdicional
-  Future<int> insertarEvaluacionAdicional(
-      Map<String, dynamic> evaluacionAdicional) async {
-    final db = await database;
-    return await db.insert('EvaluacionAdicional', evaluacionAdicional);
-  }
-
-  // Obtener EvaluacionAdicional por evaluacion_id
-  Future<List<Map<String, dynamic>>> obtenerEvaluacionAdicional(
-      int evaluacionId) async {
-    final db = await database;
-    return await db.query(
-      'EvaluacionAdicional',
-      where: 'evaluacion_id = ?',
-      whereArgs: [evaluacionId],
-    );
-  }
-
-  // Actualizar EvaluacionAdicional
-  Future<int> actualizarEvaluacionAdicional(
-      int id, Map<String, dynamic> evaluacionAdicional) async {
-    final db = await database;
-    return await db.update(
-      'EvaluacionAdicional',
-      evaluacionAdicional,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  // Eliminar EvaluacionAdicional
-  Future<int> eliminarEvaluacionAdicional(int id) async {
-    final db = await database;
-    return await db.delete(
-      'EvaluacionAdicional',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  // --------------------
-  // Métodos CRUD para Habitabilidad
-  // --------------------
-  // Ya implementados arriba
 
   // --------------------
   // Métodos CRUD para DetalleEstructura y demás tablas
   // --------------------
   // Similar al patrón de los anteriores métodos CRUD
+
+
 
   Future<void> insertarAlcanceEvaluacion(Map<String, dynamic> datos) async {
     final db = await database;

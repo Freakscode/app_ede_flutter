@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/database_helper.dart'; 
+import '../habitabilidad_edificacion/habitabilidad_screen.dart';
 
 class DamageAssessmentScreen extends StatefulWidget {
   final int evaluacionId;
@@ -16,8 +17,6 @@ class DamageAssessmentScreen extends StatefulWidget {
 }
 
 class _DamageAssessmentScreenState extends State<DamageAssessmentScreen> {
-  int _currentIndex = 0;
-
   final List<String> _opcionesPorcentaje = [
     'Ninguno',
     '<10%',
@@ -249,48 +248,40 @@ class _DamageAssessmentScreenState extends State<DamageAssessmentScreen> {
           _buildSection62(),
           const Divider(),
           _buildSection63(),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _guardarYContinuar,
+            child: const Text('Guardar y Continuar'),
+          ),
         ],
       ),
     );
   }
 
-  final List<Widget> _screens = [
-    Container(),
-    Center(child: Text('Otra pantalla', style: TextStyle(fontSize: 18))),
-    Center(child: Text('Otra pantalla 2', style: TextStyle(fontSize: 18))),
-  ];
+  void _guardarYContinuar() {
+    // Guardar datos si es necesario
+
+    // Navegar a HabitabilidadScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HabitabilidadScreen(
+          evaluacionId: widget.evaluacionId,
+          evaluacionEdificioId: widget.evaluacionEdificioId,
+          nivelDanioGlobal: _nivelDanioGlobal,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    _screens[0] = _buildSubpantallaSeccion6();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Evaluación de Daños - Sección 6'),
+        backgroundColor: const Color(0xFF002855),
       ),
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.build),
-            label: 'Sección 6',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_repair_service),
-            label: 'Otras',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'Más',
-          ),
-        ],
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),
+      body: _buildSubpantallaSeccion6(),
     );
   }
 }
