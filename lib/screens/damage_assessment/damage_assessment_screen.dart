@@ -22,7 +22,7 @@ class _DamageAssessmentScreenState extends State<DamageAssessmentScreen> {
     '<10%',
     '10-40%',
     '40-70%',
-    '70%+'
+    '>70%'
   ];
   String? _porcentajeSeleccionado;
 
@@ -142,7 +142,7 @@ class _DamageAssessmentScreenState extends State<DamageAssessmentScreen> {
     bool menos10 = (porcentaje == 'ninguno' || porcentaje == '<10%');
     bool entre10y40 = (porcentaje == '10-40%');
     bool entre40y70 = (porcentaje == '40-70%');
-    bool mas70 = (porcentaje == '70%+');
+    bool mas70 = (porcentaje == '>70%');
 
     // Nuevas reglas (reformuladas):
     // 1) Bajo (Verde):
@@ -169,6 +169,34 @@ class _DamageAssessmentScreenState extends State<DamageAssessmentScreen> {
     // Si no entró en las condiciones anteriores, entonces es Alto.
     _nivelDanioGlobal = 'Alto';
   }
+
+  // 1. Función para mapear severidad a color
+Color _obtenerColorSeveridad(String severidad, String porcentajeAfectacion) {
+  print('Severidad: $severidad, Porcentaje: $porcentajeAfectacion');
+  
+  switch (severidad) {
+    case 'Medio Alto':
+      if (porcentajeAfectacion == '40-70%') {
+        print('Aplicando rojo claro para Medio Alto en 40-70%');
+        return Color.fromARGB(255, 255, 163, 173); // Rojo claro
+      }
+      return Colors.orange;
+    case 'Medio':
+      if (porcentajeAfectacion == '<10%' || porcentajeAfectacion == '10-40%') {
+        print('Aplicando rojo claro para Medio en <70%');
+        return Color.fromARGB(255, 255, 163, 173); // Rojo claro
+      }
+      return Colors.yellow;
+    case 'Sin daño':
+      return Colors.transparent;
+    case 'Bajo':
+      return Colors.green;
+    case 'Alto':
+      return Colors.red;
+    default:
+      return Colors.transparent;
+  }
+}
 
   Widget _buildSection61() {
     return Padding(
@@ -233,7 +261,19 @@ class _DamageAssessmentScreenState extends State<DamageAssessmentScreen> {
           Text('Porcentaje de afectación seleccionado: ${_porcentajeSeleccionado ?? "No seleccionado"}'),
           Text('Severidad de daños: $_resultadoSeveridad'),
           const SizedBox(height: 16),
-          Text('Nivel de daño global resultante: $_nivelDanioGlobal'),
+          // 2. Aplicar color al nivel de daño global
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            color: _obtenerColorSeveridad(_nivelDanioGlobal, _porcentajeSeleccionado ?? 'Ninguno'),
+            child: Text(
+              'Nivel de daño global resultante: $_nivelDanioGlobal',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: (_nivelDanioGlobal == 'Sin daño' || _nivelDanioGlobal == 'Bajo') ? Colors.black : Colors.white,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -268,7 +308,8 @@ class _DamageAssessmentScreenState extends State<DamageAssessmentScreen> {
         builder: (context) => HabitabilidadScreen(
           evaluacionId: widget.evaluacionId,
           evaluacionEdificioId: widget.evaluacionEdificioId,
-          nivelDanioGlobal: _nivelDanioGlobal,
+          severidadDanio: _resultadoSeveridad,
+          porcentajeAfectacion: _porcentajeSeleccionado ?? 'Ninguno',
         ),
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/database_helper.dart'; // Asegúrate de ajustar la ruta a tu archivo
-import '../../identificacion_riesgos_externos/identificacion_riesgos_screen.dart';
+import '../restantes/restante_screen.dart';
 
 class ElementosNoEstructuralesScreen extends StatefulWidget {
   final int evaluacionId;
@@ -22,10 +22,58 @@ class _ElementosNoEstructuralesScreenState extends State<ElementosNoEstructurale
   late MurosDivisoriosWidget _murosWidget;
   late FachadasWidget _fachadasWidget;
   late EscalerasWidget _escalerasWidget;
+  int? _numeroPisos;
 
   @override
   void initState() {
     super.initState();
+    _cargarNumeroPisos();
+  }
+
+  Future<void> _cargarNumeroPisos() async {
+    try {
+      final dbHelper = DatabaseHelper();
+      
+      // Agregar timeout de 5 segundos
+      final numero = await Future.value(
+        dbHelper.obtenerNumeroPisos(widget.evaluacionEdificioId)
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          print('Timeout al cargar número de pisos');
+          return 0; // Valor por defecto
+        },
+      );
+
+      // Verificar si el widget sigue montado
+      if (!mounted) return;
+
+      setState(() {
+        _numeroPisos = numero;
+        _inicializarWidgets();
+      });
+
+    } catch (e) {
+      print('Error al cargar número de pisos: $e');
+      
+      // Verificar si el widget sigue montado
+      if (!mounted) return;
+
+      setState(() {
+        _numeroPisos = 0; // Valor por defecto en caso de error
+        _inicializarWidgets();
+      });
+
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al cargar datos. Se usarán valores por defecto.'),
+        ),
+      );
+    }
+  }
+
+  void _inicializarWidgets() {
     _murosWidget = MurosDivisoriosWidget(
       evaluacionId: widget.evaluacionId,
       evaluacionEdificioId: widget.evaluacionEdificioId,
@@ -37,6 +85,7 @@ class _ElementosNoEstructuralesScreenState extends State<ElementosNoEstructurale
     _escalerasWidget = EscalerasWidget(
       evaluacionId: widget.evaluacionId,
       evaluacionEdificioId: widget.evaluacionEdificioId,
+      numeroPisos: _numeroPisos ?? 0, // Manejar caso nulo
     );
 
     _screens = [
@@ -54,7 +103,7 @@ class _ElementosNoEstructuralesScreenState extends State<ElementosNoEstructurale
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => IdentificacionRiesgosExternosScreen(
+        builder: (context) => EvaluacionSeccion3(
           evaluacionId: widget.evaluacionId,
           evaluacionEdificioId: widget.evaluacionEdificioId,
         ),
@@ -64,6 +113,18 @@ class _ElementosNoEstructuralesScreenState extends State<ElementosNoEstructurale
 
   @override
   Widget build(BuildContext context) {
+    // Mostrar un indicador de carga mientras se recupera numero_pisos
+    if (_numeroPisos == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('3.6 Elementos no estructurales adicionales'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('3.6 Elementos no estructurales adicionales'),
@@ -291,11 +352,13 @@ class _FachadasWidgetState extends State<FachadasWidget> {
 class EscalerasWidget extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int numeroPisos; // Agregar esta propiedad
 
   const EscalerasWidget({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.numeroPisos, // Inicializar en el constructor
   }) : super(key: key);
 
   @override
@@ -309,6 +372,39 @@ class _EscalerasWidgetState extends State<EscalerasWidget> {
   bool _mixtas = false;
   bool _otro = false;
   final TextEditingController _otroController = TextEditingController();
+  bool _habilitado = true; // Nueva variable para controlar la habilitación
+
+  @override
+  void initState() {
+    super.initState();
+    _habilitarEscaleras();
+  }
+
+  void _habilitarEscaleras() {
+    if (widget.numeroPisos > 1) {
+      setState(() {
+        _habilitado = true;
+      });
+    } else {
+      setState(() {
+        _habilitado = false;
+        _concreto = false;
+        _metalica = false;
+        _madera = false;
+        _mixtas = false;
+        _otro = false;
+        _otroController.clear();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant EscalerasWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.numeroPisos != widget.numeroPisos) {
+      _habilitarEscaleras();
+    }
+  }
 
   @override
   void dispose() {
@@ -317,6 +413,8 @@ class _EscalerasWidgetState extends State<EscalerasWidget> {
   }
 
   void _guardar() async {
+    if (!_habilitado) return;
+
     final db = DatabaseHelper();
     Map<String, dynamic> datos = {
       'escaleras_concreto': _concreto ? 1 : 0,
@@ -335,48 +433,48 @@ class _EscalerasWidgetState extends State<EscalerasWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('3.6.3 Escaleras', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          CheckboxListTile(
-            title: const Text('Concreto'),
-            value: _concreto,
-            onChanged: (val) => setState(() => _concreto = val!),
-          ),
-          CheckboxListTile(
-            title: const Text('Metálica'),
-            value: _metalica,
-            onChanged: (val) => setState(() => _metalica = val!),
-          ),
-          CheckboxListTile(
-            title: const Text('Madera'),
-            value: _madera,
-            onChanged: (val) => setState(() => _madera = val!),
-          ),
-          CheckboxListTile(
-            title: const Text('Mixtas'),
-            value: _mixtas,
-            onChanged: (val) => setState(() => _mixtas = val!),
-          ),
-          CheckboxListTile(
-            title: const Text('Otro'),
-            value: _otro,
-            onChanged: (val) => setState(() => _otro = val!),
-          ),
-          if (_otro)
-            TextField(
-              controller: _otroController,
-              decoration: const InputDecoration(labelText: 'Especifique otro'),
+    return AbsorbPointer(
+      absorbing: !_habilitado, // Deshabilitar interacción si no está habilitado
+      child: Opacity(
+        opacity: _habilitado ? 1.0 : 0.5, // Reducir opacidad si está deshabilitado
+        child: Column(
+          children: [
+            CheckboxListTile(
+              title: const Text('Concreto'),
+              value: _concreto,
+              onChanged: (val) => setState(() => _concreto = val!),
             ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _guardar,
-            child: const Text('Guardar'),
-          ),
-        ],
+            CheckboxListTile(
+              title: const Text('Metálica'),
+              value: _metalica,
+              onChanged: (val) => setState(() => _metalica = val!),
+            ),
+            CheckboxListTile(
+              title: const Text('Madera'),
+              value: _madera,
+              onChanged: (val) => setState(() => _madera = val!),
+            ),
+            CheckboxListTile(
+              title: const Text('Mixtas'),
+              value: _mixtas,
+              onChanged: (val) => setState(() => _mixtas = val!),
+            ),
+            CheckboxListTile(
+              title: const Text('Otro'),
+              value: _otro,
+              onChanged: (val) => setState(() => _otro = val!),
+            ),
+            if (_otro)
+              TextField(
+                controller: _otroController,
+                decoration: const InputDecoration(labelText: 'Especifique otro'),
+              ),
+            ElevatedButton(
+              onPressed: _guardar,
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
     );
   }

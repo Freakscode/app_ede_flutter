@@ -1,7 +1,5 @@
 import 'package:ede_flutter/screens/descripcion_edificacion/usos_predominantes.dart';
 import 'package:flutter/material.dart';
-import 'sistema_estructural_material/sistema_estructural_material_screen.dart';
-
 import 'caracteristicas_generales.dart';
 
 class Bloque1Screen extends StatefulWidget {
@@ -46,35 +44,16 @@ class _Bloque1ScreenState extends State<Bloque1Screen> {
     setState(() => _currentIndex = index);
   }
 
-  void _guardarYContinuar() async {
-    // Aquí haces la lógica de guardado en la BD solo cuando el usuario haya completado ambos pasos.
-    // Por ejemplo:
-    // await DatabaseHelper().insertarCaracteristicasGenerales(datosRecopilados3_1);
-    // await DatabaseHelper().insertarUsosPredominantes(datosRecopilados3_2);
-
-    // Luego de guardar, ir al siguiente bloque de secciones
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SistemaEstructuralMaterialScreen(
-          evaluacionId: widget.evaluacionId,
-          evaluacionEdificioId: widget.evaluacionEdificioId,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Descripción de la Edificación'),
+        title: const Text('Descripción de la Edificación'),
       ),
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      // En el bloque 1, el menú inferior es para cambiar entre 3.1 y 3.2
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
@@ -89,16 +68,6 @@ class _Bloque1ScreenState extends State<Bloque1Screen> {
           ),
         ],
       ),
-      // Aquí puedes agregar el botón "Guardar y Continuar" al final si quieres,
-      // por ejemplo en un FloatingActionButton o en la misma pantalla de Usos:
-      floatingActionButton: _currentIndex == 1 
-        ? FloatingActionButton.extended(
-            onPressed: _guardarYContinuar,
-            label: Text('Guardar y continuar'),
-            icon: Icon(Icons.arrow_forward),
-          )
-        : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

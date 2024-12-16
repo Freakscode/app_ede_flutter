@@ -58,9 +58,9 @@ class _IdentificacionRiesgosExternosScreenState
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'a) Existe Riesgo'),
-            Tab(text: 'b) Estabilidad'),
-            Tab(text: 'c) Accesos/Ocupantes'),
+            Tab(text: 'a) Existe Riesgo Externo'),
+            Tab(text: 'b) Compromete Acceso y/o Ocupantes'),
+            Tab(text: 'c) Compromete Estabilidad de la Edificación'),
           ],
         ),
       ),
@@ -76,11 +76,19 @@ class _IdentificacionRiesgosExternosScreenState
   }
 
   Widget _buildTabContent(String seccion) {
+    List<String> itemsFiltrados = items;
+
+    if (seccion != 'a') {
+      itemsFiltrados = items.where((item) {
+        return respuestas[item]?['a'] == true;
+      }).toList();
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      itemCount: items.length,
+      itemCount: itemsFiltrados.length,
       itemBuilder: (context, index) {
-        final pregunta = items[index];
+        final pregunta = itemsFiltrados[index];
         final valorActual = respuestas[pregunta]?[seccion];
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
@@ -95,28 +103,60 @@ class _IdentificacionRiesgosExternosScreenState
               Row(
                 children: [
                   Expanded(
-                    child: RadioListTile<bool>(
-                      title: const Text('Sí'),
-                      value: true,
-                      groupValue: valorActual,
-                      onChanged: (val) {
-                        setState(() {
-                          respuestas[pregunta]?[seccion] = val;
-                        });
-                      },
-                    ),
+                    child: seccion == 'b'
+                        ? Container(
+                            color: respuestas[pregunta]?['b'] == true
+                                ? Colors.yellow
+                                : Colors.white,
+                            child: RadioListTile<bool>(
+                              title: const Text('Sí'),
+                              value: true,
+                              groupValue: valorActual,
+                              onChanged: (val) {
+                                setState(() {
+                                  respuestas[pregunta]?[seccion] = val;
+                                });
+                              },
+                            ),
+                          )
+                        : RadioListTile<bool>(
+                            title: const Text('Sí'),
+                            value: true,
+                            groupValue: valorActual,
+                            onChanged: (val) {
+                              setState(() {
+                                respuestas[pregunta]?[seccion] = val;
+                              });
+                            },
+                          ),
                   ),
                   Expanded(
-                    child: RadioListTile<bool>(
-                      title: const Text('No'),
-                      value: false,
-                      groupValue: valorActual,
-                      onChanged: (val) {
-                        setState(() {
-                          respuestas[pregunta]?[seccion] = val;
-                        });
-                      },
-                    ),
+                    child: seccion == 'c'
+                        ? Container(
+                            color: respuestas[pregunta]?['c'] == true
+                                ? Colors.red
+                                : Colors.white,
+                            child: RadioListTile<bool>(
+                              title: const Text('Sí'),
+                              value: true,
+                              groupValue: valorActual,
+                              onChanged: (val) {
+                                setState(() {
+                                  respuestas[pregunta]?[seccion] = val;
+                                });
+                              },
+                            ),
+                          )
+                        : RadioListTile<bool>(
+                            title: const Text('No'),
+                            value: false,
+                            groupValue: valorActual,
+                            onChanged: (val) {
+                              setState(() {
+                                respuestas[pregunta]?[seccion] = val;
+                              });
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -130,14 +170,18 @@ class _IdentificacionRiesgosExternosScreenState
 
   // En la última subsección agregamos el botón para continuar
   Widget _buildLastTabContent(String seccion) {
+    List<String> itemsFiltrados = items.where((item) {
+      return respuestas[item]?['a'] == true;
+    }).toList();
+
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16.0),
-            itemCount: items.length,
+            itemCount: itemsFiltrados.length,
             itemBuilder: (context, index) {
-              final pregunta = items[index];
+              final pregunta = itemsFiltrados[index];
               final valorActual = respuestas[pregunta]?[seccion];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -152,28 +196,60 @@ class _IdentificacionRiesgosExternosScreenState
                     Row(
                       children: [
                         Expanded(
-                          child: RadioListTile<bool>(
-                            title: const Text('Sí'),
-                            value: true,
-                            groupValue: valorActual,
-                            onChanged: (val) {
-                              setState(() {
-                                respuestas[pregunta]?[seccion] = val;
-                              });
-                            },
-                          ),
+                          child: seccion == 'b'
+                              ? Container(
+                                  color: respuestas[pregunta]?['b'] == true
+                                      ? Colors.yellow
+                                      : Colors.white,
+                                  child: RadioListTile<bool>(
+                                    title: const Text('Sí'),
+                                    value: true,
+                                    groupValue: valorActual,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        respuestas[pregunta]?[seccion] = val;
+                                      });
+                                    },
+                                  ),
+                                )
+                              : RadioListTile<bool>(
+                                  title: const Text('Sí'),
+                                  value: true,
+                                  groupValue: valorActual,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      respuestas[pregunta]?[seccion] = val;
+                                    });
+                                  },
+                                ),
                         ),
                         Expanded(
-                          child: RadioListTile<bool>(
-                            title: const Text('No'),
-                            value: false,
-                            groupValue: valorActual,
-                            onChanged: (val) {
-                              setState(() {
-                                respuestas[pregunta]?[seccion] = val;
-                              });
-                            },
-                          ),
+                          child: seccion == 'c'
+                              ? Container(
+                                  color: respuestas[pregunta]?['c'] == true
+                                      ? Colors.red
+                                      : Colors.white,
+                                  child: RadioListTile<bool>(
+                                    title: const Text('Sí'),
+                                    value: true,
+                                    groupValue: valorActual,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        respuestas[pregunta]?[seccion] = val;
+                                      });
+                                    },
+                                  ),
+                                )
+                              : RadioListTile<bool>(
+                                  title: const Text('No'),
+                                  value: false,
+                                  groupValue: valorActual,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      respuestas[pregunta]?[seccion] = val;
+                                    });
+                                  },
+                                ),
                         ),
                       ],
                     ),

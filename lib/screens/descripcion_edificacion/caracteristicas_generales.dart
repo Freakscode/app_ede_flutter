@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart'; // Si necesitas este tipo de widget
-import 'usos_predominantes.dart'; // Importar la siguiente pantalla (3.2)
+import 'package:flutter/material.dart'; // Si necesitas este tipo de widget// Importar la siguiente pantalla (3.2)
 import '../../utils/database_helper.dart';
 
 class CaracteristicasGeneralesScreen extends StatefulWidget {
@@ -44,6 +43,10 @@ class _CaracteristicasGeneralesScreenState
   // Por ejemplo: Antes de 1984, Entre 1984 y 1997, Entre 1998 y 2010, Después de 2010, Desconocida
   String? _fechaConstruccion = 'Desconocida';
 
+  // Agregar variable para controlar estado de guardado
+  // ignore: unused_field
+  bool _datosGuardados = false;
+
   @override
   void dispose() {
     _numeroPisosController.dispose();
@@ -57,30 +60,34 @@ class _CaracteristicasGeneralesScreenState
     super.dispose();
   }
 
-  void _guardarYContinuar() async {
-    await DatabaseHelper().insertarCaracteristicasGenerales({
-      'evaluacion_edificio_id': widget.evaluacionEdificioId,
-      'numero_pisos': int.tryParse(_numeroPisosController.text),
-      'numero_sotanos': int.tryParse(_numeroSotanosController.text),
-      'frente': double.tryParse(_frenteController.text),
-      'fondo': double.tryParse(_fondoController.text),
-      'unidades_residenciales':
-          int.tryParse(_unidadesResidencialesController.text),
-      'unidades_no_habitadas':
-          int.tryParse(_unidadesNoHabitadasController.text),
-      'unidades_comerciales': int.tryParse(_unidadesComercialesController.text),
-      'ocupantes': int.tryParse(_ocupantesController.text),
-    });
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => UsosPredominantesScreen(
-          evaluacionId: widget.evaluacionId,
-          evaluacionEdificioId: widget.evaluacionEdificioId,
-        ),
-      ),
-    );
+  Future<bool> _guardar() async {
+    try {
+      await DatabaseHelper().insertarCaracteristicasGenerales({
+        'evaluacion_edificio_id': widget.evaluacionEdificioId,
+        'numero_pisos': int.tryParse(_numeroPisosController.text),
+        'numero_sotanos': int.tryParse(_numeroSotanosController.text),
+        'frente': double.tryParse(_frenteController.text),
+        'fondo': double.tryParse(_fondoController.text),
+        'unidades_residenciales': int.tryParse(_unidadesResidencialesController.text),
+        'unidades_no_habitadas': int.tryParse(_unidadesNoHabitadasController.text),
+        'unidades_comerciales': int.tryParse(_unidadesComercialesController.text),
+        'ocupantes': int.tryParse(_ocupantesController.text),
+        'acceso': _acceso,
+        'muertos': _muertos ? 1 : 0,
+        'heridos': _heridos ? 1 : 0,
+        'fecha_construccion': _fechaConstruccion,
+      });
+      setState(() => _datosGuardados = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Datos guardados correctamente')),
+      );
+      return true;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al guardar los datos')),
+      );
+      return false;
+    }
   }
 
   @override
@@ -198,8 +205,8 @@ class _CaracteristicasGeneralesScreenState
             ),
             const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: _guardarYContinuar,
-              child: const Text('Guardar y Continuar'),
+              onPressed: _guardar,
+              child: const Text('Guardar'),
             ),
           ],
         ),

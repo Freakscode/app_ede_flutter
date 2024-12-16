@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../utils/database_helper.dart'; 
-import '../damage_assessment/damage_assessment_screen.dart'; 
-
+import '../../utils/database_helper.dart';
+import '../damage_assessment/damage_assessment_screen.dart';
 
 class EvaluacionDamagesEdificacionScreen extends StatefulWidget {
   final int evaluacionId;
@@ -101,8 +100,7 @@ class _EvaluacionDamagesEdificacionScreenState
       final condicion = entry.key; // Ej: '5.1'
       final valorBool = entry.value;
       if (valorBool == null) {
-        // Si no eligió nada, podrías asumir No (0) o simplemente no guardar.
-        // Asumamos valor = 0 si no se seleccionó.
+        // Asumimos valor = 0 si no se seleccionó
         await _insertarOActualizarEvaluacionCondicion(db, condicion, 0);
       } else {
         final valorInt = valorBool ? 1 : 0;
@@ -115,7 +113,7 @@ class _EvaluacionDamagesEdificacionScreenState
       final elemento = entry.key;
       final nivelDanoTexto = entry.value;
       if (nivelDanoTexto == null) {
-        // Si no eligió nada, podríamos asumir 'Sin daño' = 1
+        // Asumimos 'Sin daño' = 1
         await _insertarOActualizarEvaluacionElementoDano(db, elemento, 1);
       } else {
         final nivelDanoId = _mapearTextoANivelDanoId(nivelDanoTexto);
@@ -124,7 +122,6 @@ class _EvaluacionDamagesEdificacionScreenState
     }
 
     // Luego de guardar, navegar a la nueva pantalla.
-    // Ajusta el nombre de la pantalla a la que deseas navegar (DamageAssessmentScreen es un ejemplo)
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -138,7 +135,6 @@ class _EvaluacionDamagesEdificacionScreenState
 
   int _mapearTextoANivelDanoId(String nivel) {
     // Mapeo arbitrario. Asegúrate de que en la BD tengas correspondencia.
-    // Por ejemplo, puedes asumir que ya tienes 4 registros en NivelDaño que correspondan a estos.
     switch (nivel) {
       case 'Sin daño':
         return 1;
@@ -154,50 +150,93 @@ class _EvaluacionDamagesEdificacionScreenState
   }
 
   Future<void> _insertarOActualizarEvaluacionCondicion(DatabaseHelper db, String condicion, int valor) async {
-    final database = await db.database;
-    final existe = await database.query(
-      'EvaluacionCondiciones',
-      where: 'evaluacion_edificio_id = ? AND condicion = ?',
-      whereArgs: [widget.evaluacionEdificioId, condicion],
-      limit: 1,
-    );
+    try {
+      final database = await db.database;
+      final existe = await database.query(
+        'EvaluacionCondiciones',
+        where: 'evaluacion_edificio_id = ? AND condicion = ?',
+        whereArgs: [widget.evaluacionEdificioId, condicion],
+        limit: 1,
+      );
 
-    if (existe.isEmpty) {
-      await database.insert('EvaluacionCondiciones', {
-        'evaluacion_edificio_id': widget.evaluacionEdificioId,
-        'condicion': condicion,
-        'valor': valor,
-      });
-    } else {
-      await database.update('EvaluacionCondiciones', {
-        'valor': valor,
-      },
-      where: 'evaluacion_edificio_id = ? AND condicion = ?',
-      whereArgs: [widget.evaluacionEdificioId, condicion]);
+      if (existe.isEmpty) {
+        await database.insert('EvaluacionCondiciones', {
+          'evaluacion_edificio_id': widget.evaluacionEdificioId,
+          'condicion': condicion,
+          'valor': valor,
+        });
+        print('Insertada condición $condicion con valor $valor');
+      } else {
+        await database.update(
+          'EvaluacionCondiciones',
+          {'valor': valor},
+          where: 'evaluacion_edificio_id = ? AND condicion = ?',
+          whereArgs: [widget.evaluacionEdificioId, condicion],
+        );
+        print('Actualizada condición $condicion a valor $valor');
+      }
+    } catch (e) {
+      print('Error al insertar/actualizar condición $condicion: $e');
     }
   }
 
   Future<void> _insertarOActualizarEvaluacionElementoDano(DatabaseHelper db, String elemento, int nivelDanoId) async {
-    final database = await db.database;
-    final existe = await database.query(
-      'EvaluacionElementoDano',
-      where: 'evaluacion_edificio_id = ? AND elemento = ?',
-      whereArgs: [widget.evaluacionEdificioId, elemento],
-      limit: 1,
-    );
+    try {
+      final database = await db.database;
+      final existe = await database.query(
+        'EvaluacionElementoDano',
+        where: 'evaluacion_edificio_id = ? AND elemento = ?',
+        whereArgs: [widget.evaluacionEdificioId, elemento],
+        limit: 1,
+      );
 
-    if (existe.isEmpty) {
-      await database.insert('EvaluacionElementoDano', {
-        'evaluacion_edificio_id': widget.evaluacionEdificioId,
-        'elemento': elemento,
-        'nivel_dano_id': nivelDanoId,
-      });
+      if (existe.isEmpty) {
+        await database.insert('EvaluacionElementoDano', {
+          'evaluacion_edificio_id': widget.evaluacionEdificioId,
+          'elemento': elemento,
+          'nivel_dano_id': nivelDanoId,
+        });
+        print('Insertado daño en elemento $elemento con nivel $nivelDanoId');
+      } else {
+        await database.update(
+          'EvaluacionElementoDano',
+          {'nivel_dano_id': nivelDanoId},
+          where: 'evaluacion_edificio_id = ? AND elemento = ?',
+          whereArgs: [widget.evaluacionEdificioId, elemento],
+        );
+        print('Actualizado daño en elemento $elemento a nivel $nivelDanoId');
+      }
+    } catch (e) {
+      print('Error al insertar/actualizar daño en elemento $elemento: $e');
+    }
+  }
+
+  Color _detectarColorCondicion(String codigo, bool? respuesta) {
+    if (respuesta == null) return Colors.white;
+
+    if (['5.1', '5.2', '5.3', '5.4'].contains(codigo)) {
+      return respuesta ? Colors.red : Colors.green;
+    } else if (['5.5', '5.6'].contains(codigo)) {
+      return respuesta ? Colors.orange : Colors.green;
     } else {
-      await database.update('EvaluacionElementoDano', {
-        'nivel_dano_id': nivelDanoId,
-      },
-      where: 'evaluacion_edificio_id = ? AND elemento = ?',
-      whereArgs: [widget.evaluacionEdificioId, elemento]);
+      return Colors.white;
+    }
+  }
+
+  Color _detectarColorElemento(String codigo, String? respuesta) {
+    if (respuesta == null) return Colors.white;
+
+    switch (respuesta) {
+      case 'Sin daño':
+        return Colors.white;
+      case 'Leve':
+        return Colors.green;
+      case 'Moderado':
+        return codigo == '5.7' ? Colors.orange : Colors.yellow;
+      case 'Severo':
+        return codigo == '5.7' ? Colors.red : Colors.orange;
+      default:
+        return Colors.white;
     }
   }
 
@@ -248,45 +287,48 @@ class _EvaluacionDamagesEdificacionScreenState
         final descripcion = item['descripcion']!;
         final valor = respuestasCondiciones[codigo];
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$codigo $descripcion',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: RadioListTile<bool>(
-                      title: const Text('Sí'),
-                      value: true,
-                      groupValue: valor,
-                      onChanged: (val) {
-                        setState(() {
-                          respuestasCondiciones[codigo] = val;
-                        });
-                      },
+        return Card(
+          color: _detectarColorCondicion(codigo, valor),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$codigo - $descripcion',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<bool>(
+                        title: const Text('Sí'),
+                        value: true,
+                        groupValue: valor,
+                        onChanged: (val) {
+                          setState(() {
+                            respuestasCondiciones[codigo] = val;
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<bool>(
-                      title: const Text('No'),
-                      value: false,
-                      groupValue: valor,
-                      onChanged: (val) {
-                        setState(() {
-                          respuestasCondiciones[codigo] = val;
-                        });
-                      },
+                    Expanded(
+                      child: RadioListTile<bool>(
+                        title: const Text('No'),
+                        value: false,
+                        groupValue: valor,
+                        onChanged: (val) {
+                          setState(() {
+                            respuestasCondiciones[codigo] = val;
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const Divider(),
-            ],
+                  ],
+                ),
+                const Divider(),
+              ],
+            ),
           ),
         );
       },
@@ -305,33 +347,37 @@ class _EvaluacionDamagesEdificacionScreenState
         final descripcion = item['descripcion']!;
         final valor = respuestasElementos[codigo];
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$codigo $descripcion',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: opcionesDanio.map((opcion) {
-                  return ChoiceChip(
-                    label: Text(opcion),
-                    selected: valor == opcion,
-                    onSelected: (selected) {
-                      setState(() {
-                        respuestasElementos[codigo] = selected ? opcion : null;
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-              const Divider(),
-            ],
+        return Card(
+          color: _detectarColorElemento(codigo, valor),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$codigo - $descripcion',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: opcionesDanio.map((opcion) {
+                    return ChoiceChip(
+                      label: Text(opcion),
+                      selected: valor == opcion,
+                      selectedColor: _detectarColorElemento(codigo, valor).withOpacity(0.7),
+                      onSelected: (selected) {
+                        setState(() {
+                          respuestasElementos[codigo] = selected ? opcion : null;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const Divider(),
+              ],
+            ),
           ),
         );
       },

@@ -9,17 +9,16 @@ class SistemaEstructuralMaterialScreen extends StatefulWidget {
   final int evaluacionEdificioId;
 
   const SistemaEstructuralMaterialScreen({
-    super.key,
+    Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
-  });
+  }) : super(key: key);
 
   @override
   _SistemaEstructuralMaterialScreenState createState() => _SistemaEstructuralMaterialScreenState();
 }
 
-class _SistemaEstructuralMaterialScreenState
-    extends State<SistemaEstructuralMaterialScreen> {
+class _SistemaEstructuralMaterialScreenState extends State<SistemaEstructuralMaterialScreen> {
   // Definir los sistemas estructurales
   final List<String> sistemasEstructurales = [
     'Muros de carga',
@@ -199,7 +198,7 @@ class _SistemaEstructuralMaterialScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sistema Estructural y Material'),
+        title: const Text('4. Sistema Estructural y Materiales'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
