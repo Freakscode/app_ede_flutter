@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../utils/database_helper.dart'; 
 import '../habitabilidad_edificacion/habitabilidad_screen.dart';
+import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class DamageAssessmentScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const DamageAssessmentScreen({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -310,6 +313,7 @@ Color _obtenerColorSeveridad(String severidad, String porcentajeAfectacion) {
           evaluacionEdificioId: widget.evaluacionEdificioId,
           severidadDanio: _resultadoSeveridad,
           porcentajeAfectacion: _porcentajeSeleccionado ?? 'Ninguno',
+          userId: widget.userId,
         ),
       ),
     );
@@ -323,6 +327,16 @@ Color _obtenerColorSeveridad(String severidad, String porcentajeAfectacion) {
         backgroundColor: const Color(0xFF002855),
       ),
       body: _buildSubpantallaSeccion6(),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: 1, // Ajustar según corresponda
+        onSectionSelected: _onSectionSelected,
+      ),
     );
+  }
+
+  void _onSectionSelected(int section) {
+    // Implementar la lógica de navegación si hay múltiples secciones
+    // Por ejemplo, si hay tabs adicionales, puedes manejarlo aquí
+    // Si solo hay una sección, este método puede ser vacío o mostrar un mensaje
   }
 }

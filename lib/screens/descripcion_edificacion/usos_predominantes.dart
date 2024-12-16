@@ -5,11 +5,13 @@ import '../../utils/database_helper.dart';
 class UsosPredominantesScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const UsosPredominantesScreen({
     super.key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   });
 
   @override
@@ -75,6 +77,7 @@ class _UsosPredominantesScreenState extends State<UsosPredominantesScreen> {
           builder: (context) => SistemaEstructuralMaterialScreen(
             evaluacionId: widget.evaluacionId,
             evaluacionEdificioId: widget.evaluacionEdificioId,
+            userId: widget.userId,
           ),
         ),
       );

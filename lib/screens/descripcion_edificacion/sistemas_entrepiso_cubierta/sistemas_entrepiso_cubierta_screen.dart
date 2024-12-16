@@ -7,11 +7,13 @@ import '../../../utils/database_helper.dart';
 class SistemasEntrepisoCubiertaScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const SistemasEntrepisoCubiertaScreen({
     super.key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   });
 
   @override
@@ -63,6 +65,7 @@ class _SistemasEntrepisoCubiertaScreenState
         builder: (context) => ElementosNoEstructuralesScreen(
           evaluacionId: widget.evaluacionId,
           evaluacionEdificioId: widget.evaluacionEdificioId,
+          userId: widget.userId,
         ),
       ),
     );

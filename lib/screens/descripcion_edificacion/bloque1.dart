@@ -1,15 +1,18 @@
 import 'package:ede_flutter/screens/descripcion_edificacion/usos_predominantes.dart';
 import 'package:flutter/material.dart';
 import 'caracteristicas_generales.dart';
+import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class Bloque1Screen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const Bloque1Screen({
     super.key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   });
 
   @override
@@ -20,9 +23,6 @@ class _Bloque1ScreenState extends State<Bloque1Screen> {
   int _currentIndex = 0;
   late List<Widget> _screens;
 
-  // Aquí podrías tener variables para almacenar temporalmente los datos ingresados
-  // en las secciones 3.1 y 3.2 antes de guardarlos en la BD, si es necesario.
-
   @override
   void initState() {
     super.initState();
@@ -30,18 +30,19 @@ class _Bloque1ScreenState extends State<Bloque1Screen> {
       CaracteristicasGeneralesScreen(
         evaluacionId: widget.evaluacionId,
         evaluacionEdificioId: widget.evaluacionEdificioId,
-        // Opcional: puedes pasar callbacks para actualizar el estado local
       ),
       UsosPredominantesScreen(
         evaluacionId: widget.evaluacionId,
         evaluacionEdificioId: widget.evaluacionEdificioId,
-        // Igual que arriba, pasar callbacks si quieres recolectar datos
+        userId: widget.userId,
       ),
     ];
   }
 
-  void _onTabTapped(int index) {
-    setState(() => _currentIndex = index);
+  void _onSectionSelected(int section) {
+    setState(() {
+      _currentIndex = section - 1;
+    });
   }
 
   @override
@@ -54,9 +55,13 @@ class _Bloque1ScreenState extends State<Bloque1Screen> {
         index: _currentIndex,
         children: _screens,
       ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _currentIndex + 1,
+        onSectionSelected: _onSectionSelected,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: _onTabTapped,
+        onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.info),

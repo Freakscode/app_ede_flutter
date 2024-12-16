@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../utils/database_helper.dart'; // Asegúrate de colocar la ruta correcta de tu DatabaseHelper
+import '../../utils/database_helper.dart'; 
 import '../evaluacion_daños_edificacion/evaluacion_damage_edificacion.dart';
+import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class IdentificacionRiesgosExternosScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const IdentificacionRiesgosExternosScreen({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -72,7 +75,17 @@ class _IdentificacionRiesgosExternosScreenState
           _buildLastTabContent('c'), // La última subsección
         ],
       ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _tabController.index + 1, // Convertir a 1-indexado
+        onSectionSelected: _onSectionSelected,
+      ),
     );
+  }
+
+  void _onSectionSelected(int section) {
+    setState(() {
+      _tabController.animateTo(section - 1); // Navegar a la pestaña correspondiente
+    });
   }
 
   Widget _buildTabContent(String seccion) {
@@ -196,60 +209,34 @@ class _IdentificacionRiesgosExternosScreenState
                     Row(
                       children: [
                         Expanded(
-                          child: seccion == 'b'
-                              ? Container(
-                                  color: respuestas[pregunta]?['b'] == true
-                                      ? Colors.yellow
-                                      : Colors.white,
-                                  child: RadioListTile<bool>(
-                                    title: const Text('Sí'),
-                                    value: true,
-                                    groupValue: valorActual,
-                                    onChanged: (val) {
-                                      setState(() {
-                                        respuestas[pregunta]?[seccion] = val;
-                                      });
-                                    },
-                                  ),
-                                )
-                              : RadioListTile<bool>(
-                                  title: const Text('Sí'),
-                                  value: true,
-                                  groupValue: valorActual,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      respuestas[pregunta]?[seccion] = val;
-                                    });
-                                  },
-                                ),
+                          child: Container(
+                            color: valorActual == true ? Colors.red : Colors.white,
+                            child: RadioListTile<bool>(
+                              title: const Text('Sí'),
+                              value: true,
+                              groupValue: valorActual,
+                              onChanged: (val) {
+                                setState(() {
+                                  respuestas[pregunta]?[seccion] = val;
+                                });
+                              },
+                            ),
+                          ),
                         ),
                         Expanded(
-                          child: seccion == 'c'
-                              ? Container(
-                                  color: respuestas[pregunta]?['c'] == true
-                                      ? Colors.red
-                                      : Colors.white,
-                                  child: RadioListTile<bool>(
-                                    title: const Text('Sí'),
-                                    value: true,
-                                    groupValue: valorActual,
-                                    onChanged: (val) {
-                                      setState(() {
-                                        respuestas[pregunta]?[seccion] = val;
-                                      });
-                                    },
-                                  ),
-                                )
-                              : RadioListTile<bool>(
-                                  title: const Text('No'),
-                                  value: false,
-                                  groupValue: valorActual,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      respuestas[pregunta]?[seccion] = val;
-                                    });
-                                  },
-                                ),
+                          child: Container(
+                            color: Colors.white,
+                            child: RadioListTile<bool>(
+                              title: const Text('No'),
+                              value: false,
+                              groupValue: valorActual,
+                              onChanged: (val) {
+                                setState(() {
+                                  respuestas[pregunta]?[seccion] = val;
+                                });
+                              },
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -318,6 +305,7 @@ class _IdentificacionRiesgosExternosScreenState
           builder: (context) => EvaluacionDamagesEdificacionScreen(
             evaluacionId: widget.evaluacionId,
             evaluacionEdificioId: widget.evaluacionEdificioId,
+            userId: widget.userId,
           ),
         ),
       );

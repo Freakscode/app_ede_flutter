@@ -7,6 +7,7 @@ import '../../utils/database_helper.dart';
 import 'primera_subseccion.dart';
 import 'segunda_subseccion.dart';
 import '../identificacion_edificacion/identificacion_edificacion_screen.dart';
+import '../../widgets/floating_navigation_menu.dart';
 
 class IdentificacionEvaluacionScreen extends StatefulWidget {
   final int userId;
@@ -142,7 +143,8 @@ class _IdentificacionEvaluacionScreenState
     }
 
     try {
-      final Uint8List? firmaBytes = await _fileToBytes(_firmaFile);
+      // Obtener la ruta de la firma
+      final String? firmaPath = _firmaFile?.path;
 
       final Map<String, dynamic> evaluacionData = {
         'eventoId': DateTime.now().millisecondsSinceEpoch,
@@ -158,7 +160,7 @@ class _IdentificacionEvaluacionScreenState
         'nombre_evaluador': _nombreEvaluadorController.text.isEmpty
             ? null
             : _nombreEvaluadorController.text,
-        'firma': firmaBytes,
+        'firma': firmaPath, // Guardar la ruta en lugar de los bytes
       };
 
       final evaluacionId = await _dbHelper.insertarEvaluacion(evaluacionData);
@@ -178,6 +180,7 @@ class _IdentificacionEvaluacionScreenState
         MaterialPageRoute(
           builder: (context) => IdentificacionEdificacionScreen(
             evaluacionId: evaluacionId,
+            userId: widget.userId,
           ),
         ),
       );
@@ -193,6 +196,59 @@ class _IdentificacionEvaluacionScreenState
     setState(() {
       _selectedEventoId = tipoEventoId;
     });
+  }
+
+  void _handleSectionSelected(int section) {
+    // Primero validar datos actuales
+    if (!_formKey.currentState!.validate() || _selectedEventoId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Complete todos los campos antes de cambiar de sección')),
+      );
+      return;
+    }
+
+    // Guardar datos actuales
+    _saveCurrentData().then((_) {
+      // Navegar a la sección seleccionada
+      switch (section) {
+        case 1: // Identificación de la Evaluación
+          // Ya estamos aquí
+          break;
+        case 2: // Identificación de la Edificación
+          _navigateToEdificacion();
+          break;
+        case 3: // Descripción de la Edificación
+          _navigateToDescripcion();
+          break;
+        // ... más casos para otras secciones
+      }
+    });
+  }
+
+  Future<void> _saveCurrentData() async {
+    try {
+      // Obtener la ruta de la firma
+      final String? firmaPath = _firmaFile?.path;
+      final evaluacionData = {
+        'eventoId': DateTime.now().millisecondsSinceEpoch,
+        'usuario_id': widget.userId,
+        'fecha_inspeccion': _fechaController.text,
+        'hora': _horaController.text,
+        'dependencia_entidad': _dependenciaController.text,
+        'id_grupo': _idGrupoController.text,
+        'tipo_evento_id': _selectedEventoId,
+        'nombre_evaluador': _nombreEvaluadorController.text,
+        'firma': firmaPath, // Guardar la ruta en lugar de los bytes
+      };
+
+      await _dbHelper.insertarEvaluacion(evaluacionData);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar: $e')),
+      );
+      throw e;
+    }
   }
 
   @override
@@ -239,6 +295,10 @@ class _IdentificacionEvaluacionScreenState
           ),
         ],
       ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: 1, // Estamos en la primera sección
+        onSectionSelected: _handleSectionSelected,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         onTap: _onTabTapped,
         currentIndex: _currentIndex,
@@ -254,5 +314,30 @@ class _IdentificacionEvaluacionScreenState
         ],
       ),
     );
+  }
+
+  void _navigateToEdificacion() async {
+    try {
+      final evaluacionId = await _dbHelper.obtenerUltimaEvaluacionId(widget.userId);
+      if (!mounted) return;
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => IdentificacionEdificacionScreen(
+            evaluacionId: evaluacionId,
+            userId: widget.userId,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al navegar: $e')),
+      );
+    }
+  }
+
+  void _navigateToDescripcion() {
+    // Implementar navegación a Descripción de la Edificación
   }
 }

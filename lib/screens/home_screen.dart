@@ -25,6 +25,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _cargarEvaluaciones();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _cargarEvaluaciones();
+  }
+
   Future<void> _cargarEvaluaciones({String? eventoId}) async {
     setState(() => _isLoading = true);
     try {
@@ -42,6 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
         query += ' AND e.eventoId = ?';
         args.add(eventoId);
       }
+
+      // Agregar orden descendente por fecha de inspección o ID
+      query += ' ORDER BY e.id DESC';
 
       final evaluaciones = await db.rawQuery(query, args);
 

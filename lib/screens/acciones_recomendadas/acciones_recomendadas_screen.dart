@@ -4,12 +4,14 @@ import '../resumen_evaluacion_screen.dart';
 
 class RecomendacionesMedidasScreen extends StatefulWidget {
   final int evaluacionEdificioId;
-  final int evaluacionId; // Agregar este parámetro
+  final int evaluacionId;
+  final int userId;// Agregar este parámetro
 
   const RecomendacionesMedidasScreen({
     Key? key,
     required this.evaluacionEdificioId,
-    required this.evaluacionId, // Agregar al constructor
+    required this.evaluacionId, 
+    required this.userId// Agregar al constructor
   }) : super(key: key);
 
   @override
@@ -88,6 +90,7 @@ class _RecomendacionesMedidasScreenState extends State<RecomendacionesMedidasScr
       MaterialPageRoute(
         builder: (context) => ResumenEvaluacionScreen(
           evaluacionId: widget.evaluacionId,
+          userId: widget.userId,
                     
         ),
       ),

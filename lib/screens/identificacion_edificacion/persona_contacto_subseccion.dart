@@ -17,6 +17,7 @@ class PersonaContactoSubseccion extends StatefulWidget {
   final TextEditingController latitudController;
   final TextEditingController longitudController;
   final int evaluacionId;
+  final int userId;
 
   const PersonaContactoSubseccion({
     super.key,
@@ -34,6 +35,7 @@ class PersonaContactoSubseccion extends StatefulWidget {
     required this.latitudController,
     required this.longitudController,
     required this.evaluacionId,
+    required this.userId,
   });
 
   @override
@@ -144,6 +146,7 @@ class _PersonaContactoSubseccionState extends State<PersonaContactoSubseccion> {
           builder: (context) => Bloque1Screen(
             evaluacionId: widget.evaluacionId,
             evaluacionEdificioId: evaluacionEdificioId,
+            userId: widget.userId,
           ),
         ),
       );

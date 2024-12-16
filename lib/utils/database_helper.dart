@@ -1,4 +1,4 @@
-// ignore_for_file: unused_import
+// ignore_for_file: unused_import, unused_element
 
 import 'dart:async';
 import 'dart:io';
@@ -69,7 +69,7 @@ class DatabaseHelper {
       hora TEXT NOT NULL,
       dependencia_entidad TEXT,
       id_grupo TEXT,
-      firma BLOB,
+      firma TEXT,
       tipo_evento_id INTEGER,
       nombre_evaluador TEXT,
       otro_tipo_evento TEXT, -- Agregamos esta columna
@@ -154,8 +154,8 @@ class DatabaseHelper {
       construccion_estructura_original TEXT,   
       estado_edificacion TEXT,       
     acceso TEXT CHECK(acceso IN ('Obstruido', 'Libre')),
-    muertos INTEGER CHECK(muertos IN (0,1)),
-    heridos INTEGER CHECK(heridos IN (0,1)),
+    muertos INTEGER,
+    heridos INTEGER,
     fecha_construccion TEXT,
     FOREIGN KEY (evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
   )
@@ -427,13 +427,16 @@ class DatabaseHelper {
 
     // Tabla EvaluacionHabitabilidad
     await db.execute('''
-      CREATE TABLE EvaluacionHabitabilidad (
-        evaluacion_id INTEGER PRIMARY KEY,
-        habitabilidad_id INTEGER NOT NULL,
-        FOREIGN KEY (evaluacion_id) REFERENCES Evaluaciones(id),
-        FOREIGN KEY (habitabilidad_id) REFERENCES Habitabilidad(id)
-      )
-    ''');
+  CREATE TABLE EvaluacionHabitabilidad (
+    evaluacion_id INTEGER PRIMARY KEY,
+    habitabilidad_id INTEGER NOT NULL,
+    severidad_danos TEXT,
+    porcentaje_afectacion TEXT,
+    criterio_habitabilidad TEXT,
+    FOREIGN KEY (evaluacion_id) REFERENCES Evaluaciones(id),
+    FOREIGN KEY (habitabilidad_id) REFERENCES Habitabilidad(id)
+  )
+''');
 
     // Tabla AccionesRecomendadas
     await db.execute('''
@@ -476,7 +479,7 @@ class DatabaseHelper {
     ''');
 
     // Crear tabla EvaluacionAdicional
-  await db.execute('''
+    await db.execute('''
     CREATE TABLE EvaluacionAdicional (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       evaluacion_edificio_id INTEGER NOT NULL,
@@ -487,7 +490,6 @@ class DatabaseHelper {
       FOREIGN KEY(evaluacion_edificio_id) REFERENCES EvaluacionEdificio(id)
     )
   ''');
-
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS EvaluacionSeveridadGlobal (
@@ -527,18 +529,18 @@ class DatabaseHelper {
       int userId, int evaluacionId) async {
     final db = await database;
     final List<Map<String, dynamic>> evals = await db.rawQuery('''
-      SELECT 
-        e.*,
-        t.descripcion as tipo_evento,
-        CASE 
-          WHEN t.id = 8 THEN e.otro_tipo_evento || ' (Otro)'
-          ELSE t.descripcion 
-        END as descripcion_evento
-      FROM Evaluaciones e
-      LEFT JOIN TipoEventos t ON e.tipo_evento_id = t.id
-      WHERE e.id = ? AND e.usuario_id = ?
-      LIMIT 1
-    ''', [evaluacionId, userId]);
+    SELECT 
+      e.*,
+      t.descripcion as tipo_evento,
+      CASE 
+        WHEN t.id = 8 THEN e.otro_tipo_evento || ' (Otro)'
+        ELSE t.descripcion 
+      END as descripcion_evento
+    FROM Evaluaciones e
+    LEFT JOIN TipoEventos t ON e.tipo_evento_id = t.id
+    WHERE e.id = ? AND e.usuario_id = ?
+    LIMIT 1
+  ''', [evaluacionId, userId]);
 
     if (evals.isEmpty) return null;
     return evals.first;
@@ -644,6 +646,15 @@ class DatabaseHelper {
     }
   }
 
+  Future<int> insertarEvaluacion(Map<String, dynamic> evaluacion) async {
+    final db = await database;
+    return await db.insert(
+      'Evaluaciones',
+      evaluacion,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   // Método para insertar o actualizar EvaluacionHabitabilidad
   Future<int> insertarEvaluacionHabitabilidad(
       Map<String, dynamic> datos) async {
@@ -672,34 +683,38 @@ class DatabaseHelper {
     return null;
   }
 
-  Future<int> insertarEvaluacionAdicional(Map<String, dynamic> evaluacionAdicional) async {
-  final db = await database;
-  return await db.insert('EvaluacionAdicional', evaluacionAdicional, conflictAlgorithm: ConflictAlgorithm.replace);
-}
-
-Future<int> actualizarEvaluacionAdicional(int evaluacionEdificioId, Map<String, dynamic> evaluacionAdicional) async {
-  final db = await database;
-  return await db.update(
-    'EvaluacionAdicional',
-    evaluacionAdicional,
-    where: 'evaluacion_edificio_id = ?',
-    whereArgs: [evaluacionEdificioId],
-  );
-}
-
-Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioId) async {
-  final db = await database;
-  List<Map<String, dynamic>> resultados = await db.query(
-    'EvaluacionAdicional',
-    where: 'evaluacion_edificio_id = ?',
-    whereArgs: [evaluacionEdificioId],
-    limit: 1,
-  );
-  if (resultados.isNotEmpty) {
-    return resultados.first;
+  Future<int> insertarEvaluacionAdicional(
+      Map<String, dynamic> evaluacionAdicional) async {
+    final db = await database;
+    return await db.insert('EvaluacionAdicional', evaluacionAdicional,
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
-  return null;
-}
+
+  Future<int> actualizarEvaluacionAdicional(int evaluacionEdificioId,
+      Map<String, dynamic> evaluacionAdicional) async {
+    final db = await database;
+    return await db.update(
+      'EvaluacionAdicional',
+      evaluacionAdicional,
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+  }
+
+  Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(
+      int evaluacionEdificioId) async {
+    final db = await database;
+    List<Map<String, dynamic>> resultados = await db.query(
+      'EvaluacionAdicional',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+      limit: 1,
+    );
+    if (resultados.isNotEmpty) {
+      return resultados.first;
+    }
+    return null;
+  }
 
   Future<int> eliminarEvaluacionAdicional(int id) async {
     final db = await database;
@@ -708,6 +723,68 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<Map<String, dynamic>?> getIdentificacionEvaluacion(
+      int evaluacionId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'IdentificacionEvaluacion', // Asegúrate de que el nombre de la tabla sea correcto
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first;
+    } else {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getEvaluacionHabitabilidad(
+      int evaluacionId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'EvaluacionHabitabilidad', // Asegúrate de que el nombre de la tabla sea correcto
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first;
+    } else {
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAccionesRecomendadas(
+      int evaluacionId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'AccionesRecomendadas', // Asegúrate de que el nombre de la tabla sea correcto
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+    );
+
+    return result;
+  }
+
+  Future<Map<String, dynamic>?> getEvaluacionSeccion3(int evaluacionId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'EvaluacionSeccion3', // Asegúrate de que el nombre de la tabla sea correcto
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first;
+    } else {
+      return null;
+    }
   }
 
   Future<Map<String, dynamic>?> getEdificacion(
@@ -781,6 +858,23 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
     };
   }
 
+  Future<Map<String, dynamic>?> getCaracteristicasGenerales(
+      int evaluacionEdificioId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'CaracteristicasGenerales',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first;
+    } else {
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> getCaracteristicasGeneralesPorEvaluacion(
       int userId, int evaluacionId) async {
     final db = await database;
@@ -831,16 +925,17 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
     }
   }
 
-  Future<int> actualizarCaracteristicasGenerales(
-      int evaluacionEdificioId, Map<String, dynamic> caracteristicas) async {
-    final db = await database;
-    return await db.update(
-      'CaracteristicasGenerales',
-      caracteristicas,
-      where: 'evaluacion_edificio_id = ?',
-      whereArgs: [evaluacionEdificioId],
-    );
-  }
+  Future<int> actualizarCaracteristicasGenerales(int id, Map<String, dynamic> caracteristicas) async {
+  final db = await database;
+
+  return await db.update(
+    'CaracteristicasGenerales',
+    caracteristicas,
+    where: 'id = ?',
+    whereArgs: [id],
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
 
   // Método para obtener los usos predominantes
   Future<List<Map<String, dynamic>>> obtenerEvaluacionUsos(
@@ -1167,7 +1262,26 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
       danosEvaluacion = await obtenerDaniosEvaluacion(evaluacionEdificioId);
 
       // 9. Habitabilidad
-      habitabilidad = await obtenerHabitabilidadPorEvaluacion(evaluacionId);
+      Future<Map<String, dynamic>?> obtenerHabitabilidadPorEvaluacion(
+          int evaluacionId) async {
+        final db = await database;
+        List<Map<String, dynamic>> resultados = await db.rawQuery('''
+    SELECT 
+      eh.*,
+      h.descripcion as estado_habitabilidad,
+      eh.severidad_danos,
+      eh.porcentaje_afectacion,
+      eh.criterio_habitabilidad
+    FROM EvaluacionHabitabilidad eh
+    LEFT JOIN Habitabilidad h ON eh.habitabilidad_id = h.id
+    WHERE eh.evaluacion_id = ?
+  ''', [evaluacionId]);
+
+        if (resultados.isNotEmpty) {
+          return resultados.first;
+        }
+        return null;
+      }
 
       // 10. Acciones Recomendadas
       accionesRecomendadas = await obtenerAccionesPorEvaluacion(evaluacionId);
@@ -1216,6 +1330,26 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
       return resultados.first['id'] as int;
     }
     return null;
+  }
+
+// Agregar este método a la clase DatabaseHelper
+  Future<int> obtenerUltimaEvaluacionId(int userId) async {
+    final db = await database;
+
+    final List<Map<String, dynamic>> result = await db.query(
+      'Evaluaciones',
+      columns: ['id'],
+      where: 'usuario_id = ?',
+      whereArgs: [userId],
+      orderBy: 'id DESC',
+      limit: 1,
+    );
+
+    if (result.isEmpty) {
+      throw Exception('No se encontraron evaluaciones para el usuario');
+    }
+
+    return result.first['id'] as int;
   }
 
   Future<int> insertarEvaluacionUso(Map<String, dynamic> evaluacionUso) async {
@@ -1506,12 +1640,6 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
   // Métodos CRUD para Evaluaciones
   // --------------------
 
-  // Insertar una nueva evaluación
-  Future<int> insertarEvaluacion(Map<String, dynamic> evaluacion) async {
-    final db = await database;
-    return await db.insert('Evaluaciones', evaluacion);
-  }
-
   // Obtener todas las evaluaciones
   Future<List<Map<String, dynamic>>> obtenerEvaluaciones() async {
     final db = await database;
@@ -1650,6 +1778,25 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
       'Contacto',
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  Future<int> insertarEvaluacionSeccion3(Map<String, dynamic> seccion3) async {
+    final db = await database;
+    return await db.insert(
+      'EvaluacionSeccion3', // Asegúrate de que el nombre de la tabla sea correcto
+      seccion3,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<int> insertarAccionesRecomendadas(
+      Map<String, dynamic> accionRecomendada) async {
+    final db = await database;
+    return await db.insert(
+      'AccionesRecomendadas', // Asegúrate de que el nombre de la tabla sea correcto
+      accionRecomendada,
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
@@ -2134,17 +2281,27 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
   // Métodos CRUD para EvaluacionHabitabilidad
   // --------------------
 
-  // Obtener Habitabilidad por evaluacion_id
   Future<Map<String, dynamic>?> obtenerHabitabilidadPorEvaluacion(
       int evaluacionId) async {
     final db = await database;
-    List<Map<String, dynamic>> resultados = await db.query(
-      'EvaluacionHabitabilidad',
-      where: 'evaluacion_id = ?',
-      whereArgs: [evaluacionId],
-    );
+    List<Map<String, dynamic>> resultados = await db.rawQuery('''
+    SELECT 
+      eh.*,
+      h.descripcion as estado_habitabilidad
+    FROM EvaluacionHabitabilidad eh
+    LEFT JOIN Habitabilidad h ON eh.habitabilidad_id = h.id
+    WHERE eh.evaluacion_id = ?
+  ''', [evaluacionId]);
+
     if (resultados.isNotEmpty) {
-      return resultados.first;
+      // Agregar información adicional de la evaluación de daños
+      final evaluacionDanos = await obtenerDaniosEvaluacion(evaluacionId);
+      return {
+        ...resultados.first,
+        'severidad_danos': evaluacionDanos?['severidad_danos'],
+        'porcentaje_afectacion': evaluacionDanos?['porcentaje_afectacion'],
+        'estado': resultados.first['estado_habitabilidad'],
+      };
     }
     return null;
   }
@@ -2468,17 +2625,18 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
   ///
   /// [id] es el ID de la evaluación de la cual se desea obtener la firma.
   /// Retorna un List<int> con los bytes de la firma o null si no se encuentra.
-  Future<List<int>?> getFirmaEvaluacion(int id) async {
+  Future<String?> getFirmaEvaluacion(int evaluacionId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'Evaluaciones',
       columns: ['firma'],
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [evaluacionId],
+      limit: 1,
     );
 
     if (maps.isNotEmpty) {
-      return maps.first['firma'] as List<int>?;
+      return maps.first['firma'] as String?;
     } else {
       return null;
     }
@@ -2545,7 +2703,7 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
     String? dependenciaEntidad,
     String? idGrupo,
     required int tipoEventoId,
-    required List<int> firma, // Firma como bytes
+    required String firmaPath, // Cambiar List<int> por String
   }) async {
     final db = await database;
     Map<String, dynamic> evaluacion = {
@@ -2556,7 +2714,7 @@ Future<Map<String, dynamic>?> obtenerEvaluacionAdicional(int evaluacionEdificioI
       'dependencia_entidad': dependenciaEntidad,
       'id_grupo': idGrupo,
       'tipo_evento_id': tipoEventoId,
-      'firma': firma,
+      'firma': firmaPath, // Guardar la ruta en lugar de los bytes
     };
 
     return await db.insert(

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../utils/database_helper.dart';
 import '../elementos_no_estructurales/elementos_no_estructurales_screen.dart';
+import '../../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class SistemasCubiertaScreen extends StatefulWidget {
   final int evaluacionEdificioId;
   final int evaluacionId;
+  final int userId;
 
   const SistemasCubiertaScreen({
     Key? key,
     required this.evaluacionEdificioId,
     required this.evaluacionId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -41,6 +44,12 @@ class _SistemasCubiertaScreenState extends State<SistemasCubiertaScreen> {
   // Controladores para "Otro" campo de texto
   final TextEditingController _otroSoporteController = TextEditingController();
   final TextEditingController _otroRevestimientoController = TextEditingController();
+
+  int _currentSection = 1;
+
+  void _onSectionSelected(int section) {
+    // Navegar a la sección correspondiente
+  }
 
   @override
   void dispose() {
@@ -98,6 +107,7 @@ class _SistemasCubiertaScreenState extends State<SistemasCubiertaScreen> {
           builder: (context) => ElementosNoEstructuralesScreen(
             evaluacionId: widget.evaluacionId,
             evaluacionEdificioId: widget.evaluacionEdificioId,
+            userId: widget.userId,
           ),
         ),
       );
@@ -189,6 +199,10 @@ class _SistemasCubiertaScreenState extends State<SistemasCubiertaScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _currentSection,
+        onSectionSelected: _onSectionSelected,
       ),
     );
   }

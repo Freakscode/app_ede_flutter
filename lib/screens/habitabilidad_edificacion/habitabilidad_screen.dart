@@ -2,7 +2,8 @@
 
 import 'package:flutter/material.dart';
 import '../../utils/database_helper.dart';
-import '../acciones_recomendadas/evaluacion_completa.dart'; // Importar la pantalla de Recomendaciones y Medidas
+import '../acciones_recomendadas/evaluacion_completa.dart';
+import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 enum CriterioHabitabilidad {
   H_Segura,
@@ -19,6 +20,7 @@ class HabitabilidadScreen extends StatefulWidget {
   final int evaluacionEdificioId;
   final String severidadDanio;
   final String porcentajeAfectacion;
+  final int userId;
 
   const HabitabilidadScreen({
     Key? key,
@@ -26,6 +28,7 @@ class HabitabilidadScreen extends StatefulWidget {
     required this.evaluacionEdificioId,
     required this.severidadDanio,
     required this.porcentajeAfectacion,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -164,6 +167,9 @@ class _HabitabilidadScreenState extends State<HabitabilidadScreen> {
     await db.insertarEvaluacionHabitabilidad({
       'evaluacion_id': widget.evaluacionId,
       'habitabilidad_id': habitabilidadId,
+      'severidad_danos': widget.severidadDanio,
+      'porcentaje_afectacion': widget.porcentajeAfectacion,
+      'criterio_habitabilidad': _obtenerDescripcionCriterio(criterioHabitabilidad),
     });
 
     // Mostrar un mensaje de éxito
@@ -178,6 +184,7 @@ class _HabitabilidadScreenState extends State<HabitabilidadScreen> {
         builder: (context) => EvaluacionCompletaScreen(
           evaluacionEdificioId: widget.evaluacionEdificioId,
           evaluacionId: widget.evaluacionId,
+          userId: widget.userId,
         ),
       ),
     );
@@ -187,9 +194,9 @@ class _HabitabilidadScreenState extends State<HabitabilidadScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('7. Habitabilidad'),
+        title: const Text('Habitabilidad de la Edificación'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -235,7 +242,29 @@ class _HabitabilidadScreenState extends State<HabitabilidadScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: 1, // Ajustar según corresponda
+        onSectionSelected: _onSectionSelected,
+      ),
     );
+  }
+
+  void _onSectionSelected(int section) {
+    // Implementar la lógica de navegación si hay múltiples secciones
+    // Por ejemplo, navegar a Evaluación Completa si corresponde
+    if (section == 8) { // Asumiendo que sección 8 es Evaluación Completa
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EvaluacionCompletaScreen(
+            evaluacionId: widget.evaluacionId,
+            evaluacionEdificioId: widget.evaluacionId,
+            userId: widget.userId,
+          ),
+        ),
+      );
+    }
+    // Añadir más casos si hay más secciones
   }
 
   String _obtenerDescripcionCriterio(CriterioHabitabilidad criterio) {

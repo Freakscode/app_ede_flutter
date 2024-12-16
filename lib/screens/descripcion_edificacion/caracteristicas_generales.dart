@@ -36,8 +36,8 @@ class _CaracteristicasGeneralesScreenState
   String? _acceso = 'Libre'; // Puede ser 'Obstruido' o 'Libre'
 
   // Muertos y Heridos (booleanos)
-  bool _muertos = false;
-  bool _heridos = false;
+  int _muertos = 0;
+  int _heridos = 0;
 
   // Fecha de construcción (Dropdown)
   // Por ejemplo: Antes de 1984, Entre 1984 y 1997, Entre 1998 y 2010, Después de 2010, Desconocida
@@ -73,8 +73,8 @@ class _CaracteristicasGeneralesScreenState
         'unidades_comerciales': int.tryParse(_unidadesComercialesController.text),
         'ocupantes': int.tryParse(_ocupantesController.text),
         'acceso': _acceso,
-        'muertos': _muertos ? 1 : 0,
-        'heridos': _heridos ? 1 : 0,
+        'muertos': _muertos, 
+        'heridos': _heridos, 
         'fecha_construccion': _fechaConstruccion,
       });
       setState(() => _datosGuardados = true);
@@ -170,17 +170,54 @@ class _CaracteristicasGeneralesScreenState
             const SizedBox(height: 20),
             const Text('Muertos:',
                 style: TextStyle(fontWeight: FontWeight.bold)),
-            SwitchListTile(
-              title: const Text('¿Hay muertos?'),
-              value: _muertos,
-              onChanged: (value) => setState(() => _muertos = value),
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: 'Cantidad de muertos',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              initialValue: _muertos.toString(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingrese la cantidad de muertos';
+                }
+                final n = int.tryParse(value);
+                if (n == null || n < 0) {
+                  return 'Ingrese un número válido';
+                }
+                return null;
+              },
+              onChanged: (value) {
+                setState(() {
+                  _muertos = int.tryParse(value) ?? 0;
+                });
+              },
             ),
+            const SizedBox(height: 16), // Espacio entre campos
             const Text('Heridos:',
                 style: TextStyle(fontWeight: FontWeight.bold)),
-            SwitchListTile(
-              title: const Text('¿Hay heridos?'),
-              value: _heridos,
-              onChanged: (value) => setState(() => _heridos = value),
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: 'Cantidad de heridos',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              initialValue: _heridos.toString(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingrese la cantidad de heridos';
+                }
+                final n = int.tryParse(value);
+                if (n == null || n < 0) {
+                  return 'Ingrese un número válido';
+                }
+                return null;
+              },
+              onChanged: (value) {
+                setState(() {
+                  _heridos = int.tryParse(value) ?? 0;
+                });
+              },
             ),
             const SizedBox(height: 20),
             const Text('Fecha de diseño o construcción:',

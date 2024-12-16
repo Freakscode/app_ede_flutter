@@ -3,15 +3,18 @@
 import 'package:flutter/material.dart';
 import '../../../utils/database_helper.dart';
 import '../sistemas_entrepiso/sistema_entrepiso_screen.dart';
+import '../../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class SistemaEstructuralMaterialScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const SistemaEstructuralMaterialScreen({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -77,6 +80,13 @@ class _SistemaEstructuralMaterialScreenState extends State<SistemaEstructuralMat
 
   // Controlador para el campo "¿Cuál?" en "Otro"
   Map<String, TextEditingController> _otroMaterialControllers = {};
+
+  int _currentSection = 1;
+
+  void _onSectionSelected(int section) {
+    // Navegar a la sección correspondiente
+    // Implementa la lógica según la estructura de tu formulario
+  }
 
   @override
   void initState() {
@@ -189,6 +199,7 @@ class _SistemaEstructuralMaterialScreenState extends State<SistemaEstructuralMat
             builder: (context) => SistemaEntrepisoScreen(
               evaluacionId: widget.evaluacionId,
               evaluacionEdificioId: widget.evaluacionEdificioId,
+              userId: widget.userId,
             ),
           ),
         );
@@ -198,7 +209,7 @@ class _SistemaEstructuralMaterialScreenState extends State<SistemaEstructuralMat
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('4. Sistema Estructural y Materiales'),
+        title: const Text('Sistema Estructural Material'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -298,6 +309,10 @@ class _SistemaEstructuralMaterialScreenState extends State<SistemaEstructuralMat
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _currentSection,
+        onSectionSelected: _onSectionSelected,
       ),
     );
   }

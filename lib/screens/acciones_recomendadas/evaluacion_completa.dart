@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'acciones_recomendadas_screen.dart';
 import 'evaluacion_adicional.dart';
+import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class EvaluacionCompletaScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
-  const EvaluacionCompletaScreen({Key? key, required this.evaluacionEdificioId, required this.evaluacionId})
+  const EvaluacionCompletaScreen({Key? key, required this.evaluacionEdificioId, required this.evaluacionId,
+    required this.userId})
       : super(key: key);
 
   @override
@@ -26,6 +29,7 @@ class _EvaluacionCompletaScreenState extends State<EvaluacionCompletaScreen> {
       RecomendacionesMedidasScreen(
         evaluacionEdificioId: widget.evaluacionEdificioId,
         evaluacionId: widget.evaluacionId,
+        userId: widget.userId,
       ),
       EvaluacionAdicionalScreen(
         evaluacionEdificioId: widget.evaluacionEdificioId,
@@ -39,6 +43,12 @@ class _EvaluacionCompletaScreenState extends State<EvaluacionCompletaScreen> {
     });
   }
 
+  void _onSectionSelected(int section) {
+    setState(() {
+      _currentIndex = section - 1; // Asumiendo que las secciones empiezan en 1
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,6 +58,10 @@ class _EvaluacionCompletaScreenState extends State<EvaluacionCompletaScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
+      ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _currentIndex + 1, // Convertir a 1-indexado
+        onSectionSelected: _onSectionSelected,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

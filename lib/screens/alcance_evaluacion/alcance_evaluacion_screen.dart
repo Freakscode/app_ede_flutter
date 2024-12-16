@@ -5,11 +5,13 @@ import '../evaluacion_daños_edificacion/evaluacion_damage_edificacion.dart';
 class AlcanceEvaluacionScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const AlcanceEvaluacionScreen({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -56,6 +58,7 @@ class _AlcanceEvaluacionScreenState extends State<AlcanceEvaluacionScreen> {
           builder: (context) => EvaluacionDamagesEdificacionScreen(
             evaluacionId: widget.evaluacionId,
             evaluacionEdificioId: widget.evaluacionEdificioId,
+            userId: widget.userId,
           ),
         ),
       );

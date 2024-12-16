@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../utils/database_helper.dart';
 import '../../identificacion_riesgos_externos/identificacion_riesgos_screen.dart';
+import '../../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class EvaluacionSeccion3 extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const EvaluacionSeccion3({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -24,6 +27,7 @@ class _EvaluacionSeccion3State extends State<EvaluacionSeccion3> {
   String? nivelDiseno;
   String? calidadDiseno;
   String? estadoEdificacion;
+  int _currentSection = 1;
 
   @override
   void initState() {
@@ -62,9 +66,14 @@ class _EvaluacionSeccion3State extends State<EvaluacionSeccion3> {
         builder: (context) => IdentificacionRiesgosExternosScreen(
           evaluacionId: widget.evaluacionId,
           evaluacionEdificioId: widget.evaluacionEdificioId,
+          userId: widget.userId,
         ),
       ),
     );
+  }
+
+  void _onSectionSelected(int section) {
+    // Navegar a la sección correspondiente
   }
 
   Widget buildRadioGroup({
@@ -132,6 +141,10 @@ class _EvaluacionSeccion3State extends State<EvaluacionSeccion3> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _currentSection,
+        onSectionSelected: _onSectionSelected,
       ),
     );
   }

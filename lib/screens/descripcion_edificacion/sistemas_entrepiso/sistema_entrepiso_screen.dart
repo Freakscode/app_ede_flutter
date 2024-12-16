@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 import '../elementos_no_estructurales/elementos_no_estructurales_screen.dart';
 import '../../../utils/database_helper.dart';
 import '../sistema_cubierta/sistema_cubierta_screen.dart';
+import '../../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class SistemaEntrepisoScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const SistemaEntrepisoScreen({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -57,6 +60,12 @@ class _SistemaEntrepisoScreenState extends State<SistemaEntrepisoScreen> {
   Map<String, bool> _sistemasSeleccionados = {};
   Map<String, List<String>> _materialesSeleccionados = {};
   Map<String, TextEditingController> _otroSistemaControllers = {};
+
+  int _currentSection = 1;
+
+  void _onSectionSelected(int section) {
+    // Navegar a la sección correspondiente
+  }
 
   @override
   void initState() {
@@ -173,6 +182,10 @@ class _SistemaEntrepisoScreenState extends State<SistemaEntrepisoScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _currentSection,
+        onSectionSelected: _onSectionSelected,
+      ),
     );
   }
 
@@ -236,6 +249,7 @@ class _SistemaEntrepisoScreenState extends State<SistemaEntrepisoScreen> {
           builder: (context) => SistemasCubiertaScreen(
             evaluacionEdificioId: widget.evaluacionEdificioId,
             evaluacionId: widget.evaluacionId,
+            userId: widget.userId,
           ),
         ),
       );

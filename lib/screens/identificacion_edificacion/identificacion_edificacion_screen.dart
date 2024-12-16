@@ -8,17 +8,25 @@ import 'identificacion_catastral_subseccion.dart';
 import 'persona_contacto_subseccion.dart';
 import 'direccion_subseccion.dart';
 import '../../utils/database_helper.dart';
+import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class IdentificacionEdificacionScreen extends StatefulWidget {
   final int evaluacionId;
+  final int userId;
 
-  const IdentificacionEdificacionScreen({Key? key, required this.evaluacionId}) : super(key: key);
+  const IdentificacionEdificacionScreen({
+    Key? key,
+    required this.evaluacionId,
+    required this.userId,
+  }) : super(key: key);
 
   @override
-  _IdentificacionEdificacionScreenState createState() => _IdentificacionEdificacionScreenState();
+  _IdentificacionEdificacionScreenState createState() =>
+      _IdentificacionEdificacionScreenState();
 }
 
-class _IdentificacionEdificacionScreenState extends State<IdentificacionEdificacionScreen> {
+class _IdentificacionEdificacionScreenState
+    extends State<IdentificacionEdificacionScreen> {
   int _currentIndex = 0;
 
   // Controladores para Datos Generales
@@ -54,6 +62,12 @@ class _IdentificacionEdificacionScreenState extends State<IdentificacionEdificac
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
+    });
+  }
+
+  void _onSectionSelected(int section) {
+    setState(() {
+      _currentIndex = section - 1; // Asumiendo que las secciones empiezan en 1
     });
   }
 
@@ -239,8 +253,13 @@ class _IdentificacionEdificacionScreenState extends State<IdentificacionEdificac
             latitudController: _latitudController,
             longitudController: _longitudController,
             evaluacionId: widget.evaluacionId,
+            userId: widget.userId,
           ),
         ],
+      ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _currentIndex + 1, // Convertir a 1-indexado
+        onSectionSelected: _onSectionSelected,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -264,7 +283,7 @@ class _IdentificacionEdificacionScreenState extends State<IdentificacionEdificac
             label: 'Catastral',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.contact_mail),
+            icon: Icon(Icons.contact_phone),
             label: 'Contacto',
           ),
         ],

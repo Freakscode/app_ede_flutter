@@ -1,15 +1,20 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import '../../utils/database_helper.dart';
 import '../damage_assessment/damage_assessment_screen.dart';
+import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class EvaluacionDamagesEdificacionScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const EvaluacionDamagesEdificacionScreen({
     Key? key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -128,6 +133,7 @@ class _EvaluacionDamagesEdificacionScreenState
         builder: (context) => DamageAssessmentScreen(
           evaluacionId: widget.evaluacionId,
           evaluacionEdificioId: widget.evaluacionEdificioId,
+          userId: widget.userId,
         ),
       ),
     );
@@ -244,37 +250,33 @@ class _EvaluacionDamagesEdificacionScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('5. Evaluación de Daños en la Edificación'),
+        title: const Text('Evaluación de Daños Edificación'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: '5.1 - 5.6'),
-            Tab(text: '5.7 - 5.11'),
+            Tab(text: 'Condiciones'),
+            Tab(text: 'Elementos'),
           ],
         ),
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildSubseccionCondiciones(),
-                _buildSubseccionElementos(),
-              ],
-            ),
-          ),
-          // Botón para guardar datos y continuar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _guardarDatos,
-              child: const Text('Guardar y Continuar'),
-            ),
-          ),
+          _buildSubseccionCondiciones(),
+          _buildSubseccionElementos(),
         ],
       ),
+      floatingActionButton: FloatingSectionsMenu(
+        currentSection: _tabController.index + 1, // Convertir a 1-indexado
+        onSectionSelected: _onSectionSelected,
+      ),
     );
+  }
+
+  void _onSectionSelected(int section) {
+    setState(() {
+      _tabController.animateTo(section - 1); // Navegar a la pestaña correspondiente
+    });
   }
 
   Widget _buildSubseccionCondiciones() {

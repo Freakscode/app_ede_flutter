@@ -5,11 +5,13 @@ import '../restantes/restante_screen.dart';
 class ElementosNoEstructuralesScreen extends StatefulWidget {
   final int evaluacionId;
   final int evaluacionEdificioId;
+  final int userId;
 
   const ElementosNoEstructuralesScreen({
     super.key,
     required this.evaluacionId,
     required this.evaluacionEdificioId,
+    required this.userId,
   });
 
   @override
@@ -106,6 +108,7 @@ class _ElementosNoEstructuralesScreenState extends State<ElementosNoEstructurale
         builder: (context) => EvaluacionSeccion3(
           evaluacionId: widget.evaluacionId,
           evaluacionEdificioId: widget.evaluacionEdificioId,
+          userId: widget.userId,
         ),
       ),
     );
