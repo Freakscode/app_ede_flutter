@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import '../models/comentario.dart';
 
 class DatabaseHelper {
   // Singleton instance
@@ -80,23 +81,16 @@ class DatabaseHelper {
 
     // Tabla Edificios
     await db.execute('''
-      CREATE TABLE Edificios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre_edificacion TEXT,
-        municipio TEXT NOT NULL,
-        comuna TEXT NOT NULL,
-        barrio_vereda TEXT NOT NULL,
-        tipo_propiedad TEXT,
-        departamento TEXT,
-        tipo_via TEXT,
-        numero_via TEXT,
-        apendice_via TEXT,
-        orientacion TEXT,
-        numero_cruce TEXT,
-        orientacion_cruce TEXT,
-        complemento_direccion TEXT
-      )
-    ''');
+  CREATE TABLE Edificios (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre_edificacion TEXT,
+  municipio TEXT NOT NULL,
+  comuna TEXT NOT NULL,
+  barrio_vereda TEXT,
+  tipo_propiedad TEXT,
+  departamento TEXT
+);
+''');
 
     await db.execute('''
     CREATE TABLE SistemasEstructurales (
@@ -118,6 +112,8 @@ class DatabaseHelper {
         codigo_area_metropolitana TEXT,
         latitud REAL NOT NULL,
         longitud REAL NOT NULL,
+        porcentaje_afectacion TEXT,
+        severidad_danos TEXT,
         FOREIGN KEY (evaluacion_id) REFERENCES Evaluaciones(id),
         FOREIGN KEY (edificio_id) REFERENCES Edificios(id)
       )
@@ -361,6 +357,31 @@ class DatabaseHelper {
       )
     ''');
 
+    // Tabla Comentarios
+    await db.execute('''
+    CREATE TABLE Comentarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario_id INTEGER NOT NULL,
+      evaluacion_id INTEGER NOT NULL,
+      nombre_seccion TEXT NOT NULL,
+      texto TEXT,
+      fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (usuario_id) REFERENCES Usuarios(id),
+      FOREIGN KEY (evaluacion_id) REFERENCES Evaluaciones(id)
+    )
+  ''');
+
+    // Tabla ComentariosRecursos
+    await db.execute('''
+    CREATE TABLE ComentariosRecursos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      comentario_id INTEGER NOT NULL,
+      tipo TEXT NOT NULL CHECK(tipo IN ('imagen', 'audio')),
+      path_archivo TEXT NOT NULL,
+      FOREIGN KEY (comentario_id) REFERENCES Comentarios(id)
+    )
+  ''');
+
     // Tabla DañosEvaluacion
     await db.execute('''
   CREATE TABLE DañosEvaluacion (
@@ -468,6 +489,23 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
+  CREATE TABLE Direcciones (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  edificio_id INTEGER NOT NULL,
+  tipo_via TEXT NOT NULL,
+  numero_via TEXT NOT NULL,
+  apendice_via TEXT,
+  orientacion TEXT,
+  numero_cruce TEXT NOT NULL,
+  orientacion_cruce TEXT,
+  numero TEXT NOT NULL,
+  complemento_direccion TEXT,
+  FOREIGN KEY(edificio_id) REFERENCES Edificios(id)
+);
+
+''');
+
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS EvaluacionElementoDano (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         evaluacion_edificio_id INTEGER NOT NULL,
@@ -482,6 +520,7 @@ class DatabaseHelper {
     await db.execute('''
     CREATE TABLE EvaluacionAdicional (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      evaluacion_id INTEGER NOT NULL,
       evaluacion_edificio_id INTEGER NOT NULL,
       estructural TEXT,
       geotecnica TEXT,
@@ -910,32 +949,139 @@ class DatabaseHelper {
   }
 
   // Método para obtener las características generales
-  Future<Map<String, dynamic>?> obtenerCaracteristicasGenerales(
-      int evaluacionEdificioId) async {
-    final db = await database;
-    List<Map<String, dynamic>> resultado = await db.query(
+  Future<Map<String, dynamic>?> obtenerCaracteristicasGenerales(int evaluacionEdificioId) async {
+  final db = await database;
+  final List<Map<String, dynamic>> result = await db.query(
+    'CaracteristicasGenerales',
+    where: 'evaluacion_edificio_id = ?',
+    whereArgs: [evaluacionEdificioId],
+  );
+  
+  return result.isNotEmpty ? result.first : null;
+}
+
+Future<Map<String, dynamic>> obtenerDatosDescripcionEdificacion(int evaluacionId) async {
+  final db = await database;
+
+  try {
+    // Obtener evaluacion_edificio_id
+    final List<Map<String, dynamic>> evalEdificio = await db.query(
+      'EvaluacionEdificio',
+      where: 'evaluacion_id = ?',
+      whereArgs: [evaluacionId],
+    );
+
+    if (evalEdificio.isEmpty) return {};
+
+    final int evaluacionEdificioId = evalEdificio.first['id'];
+
+    // 1. Características Generales
+    final caracteristicasResult = await db.query(
       'CaracteristicasGenerales',
       where: 'evaluacion_edificio_id = ?',
       whereArgs: [evaluacionEdificioId],
     );
-    if (resultado.isNotEmpty) {
-      return resultado.first;
-    } else {
-      return null;
-    }
+
+    // 2. Usos Predominantes
+    final usosResult = await db.query(
+      'EvaluacionUsos',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+
+    // 3. Sistema Estructural
+    final estructuralResult = await db.query(
+      'SistemaEstructural',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+
+    // 4. Sistema Entrepiso
+    final entrepisoResult = await db.query(
+      'SistemaEntrepiso',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+
+    // 5. Sistema Cubierta
+    final cubiertaResult = await db.query(
+      'SistemaCubierta',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+
+    // 6. Sistema Soporte y Revestimiento
+    final soporteRevestimientoResult = await db.query(
+      'SistemaSoporteRevestimiento',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+
+    // 7. Elementos No Estructurales
+    final elementosResult = await db.query(
+      'ElementosNoEstructurales',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+
+    // 8. Evaluación Sección 3
+    final seccion3Result = await db.query(
+      'EvaluacionSeccion3',
+      where: 'evaluacion_edificio_id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+
+    return {
+      'caracteristicas_generales': caracteristicasResult.isNotEmpty ? caracteristicasResult.first : null,
+      'usos_predominantes': usosResult.isNotEmpty ? usosResult.first : null,
+      'sistema_estructural': estructuralResult.isNotEmpty ? estructuralResult.first : null,
+      'sistema_entrepiso': entrepisoResult.isNotEmpty ? entrepisoResult.first : null,
+      'sistema_cubierta': cubiertaResult.isNotEmpty ? cubiertaResult.first : null,
+      'sistema_soporte_revestimiento': soporteRevestimientoResult.isNotEmpty ? soporteRevestimientoResult.first : null,
+      'elementos_no_estructurales': elementosResult.isNotEmpty ? elementosResult.first : null,
+      'evaluacion_seccion3': seccion3Result.isNotEmpty ? seccion3Result.first : null,
+    };
+  } catch (e) {
+    print('Error al obtener datos de descripción edificación: $e');
+    return {};
   }
-
-  Future<int> actualizarCaracteristicasGenerales(int id, Map<String, dynamic> caracteristicas) async {
-  final db = await database;
-
-  return await db.update(
-    'CaracteristicasGenerales',
-    caracteristicas,
-    where: 'id = ?',
-    whereArgs: [id],
-    conflictAlgorithm: ConflictAlgorithm.replace,
-  );
 }
+
+Future<Map<String, dynamic>> obtenerDatosResumen(int evaluacionId) async {
+  final db = await database;
+  
+  // Obtener el edificio_id primero
+  final List<Map<String, dynamic>> edificioResult = await db.query(
+    'EvaluacionEdificio',
+    where: 'evaluacion_id = ?',
+    whereArgs: [evaluacionId],
+  );
+  
+  if (edificioResult.isEmpty) return {};
+  
+  final int edificioId = edificioResult.first['edificio_id'];
+  
+  // Obtener características generales
+  final caracteristicas = await obtenerCaracteristicasGenerales(edificioId);
+  
+  return {
+    'caracteristicas_generales': caracteristicas,
+    // ...otros datos existentes...
+  };
+}
+
+  Future<int> actualizarCaracteristicasGenerales(
+      int id, Map<String, dynamic> caracteristicas) async {
+    final db = await database;
+
+    return await db.update(
+      'CaracteristicasGenerales',
+      caracteristicas,
+      where: 'id = ?',
+      whereArgs: [id],
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
 
   // Método para obtener los usos predominantes
   Future<List<Map<String, dynamic>>> obtenerEvaluacionUsos(
@@ -977,6 +1123,25 @@ class DatabaseHelper {
     WHERE EvaluacionUsos.evaluacion_edificio_id = ?
   ''', [evaluacionEdificioId]);
   }
+
+  Future<int> actualizarDanosEvaluacionEdificio(int evaluacionEdificioId, String porcentajeAfectacion, String severidadDanos) async {
+  final db = await database;
+  
+  try {
+    return await db.update(
+      'EvaluacionEdificio',
+      {
+        'porcentaje_afectacion': porcentajeAfectacion,
+        'severidad_danos': severidadDanos,
+      },
+      where: 'id = ?',
+      whereArgs: [evaluacionEdificioId],
+    );
+  } catch (e) {
+    print('Error actualizando daños en EvaluacionEdificio: $e');
+    throw e;
+  }
+}
 
   Future<Map<String, dynamic>?> getDetalleEstructuraPorEvaluacion(
       int userId, int evaluacionId) async {
@@ -1062,6 +1227,110 @@ class DatabaseHelper {
       return habRes.first;
     }
     return null;
+  }
+
+  // Métodos para insertar y obtener comentarios:
+  Future<int> insertarComentario({
+    required int usuarioId,
+    required int evaluacionId,
+    required String nombreSeccion,
+    String? texto,
+  }) async {
+    final db = await database;
+    return await db.insert('Comentarios', {
+      'usuario_id': usuarioId,
+      'evaluacion_id': evaluacionId,
+      'nombre_seccion': nombreSeccion,
+      'texto': texto,
+      'fecha': DateTime.now().toIso8601String(),
+    });
+  }
+
+// Actualizar un comentario
+  Future<int> actualizarComentario({
+    required int comentarioId,
+    String? texto,
+  }) async {
+    final db = await database;
+    return await db.update(
+      'Comentarios',
+      {
+        'texto': texto,
+      },
+      where: 'id = ?',
+      whereArgs: [comentarioId],
+    );
+  }
+
+  // Eliminar un recurso específico de un comentario
+  Future<int> eliminarRecursoComentario(int recursoId) async {
+    final db = await database;
+    return await db.delete(
+      'ComentariosRecursos',
+      where: 'id = ?',
+      whereArgs: [recursoId],
+    );
+  }
+
+  Future<List<Comentario>> obtenerComentarios(
+      int evaluacionId, String nombreSeccion) async {
+    final db = await database;
+    // Obtener comentarios
+    List<Map<String, dynamic>> comentariosMap = await db.query(
+      'Comentarios',
+      where: 'evaluacion_id = ? AND nombre_seccion = ?',
+      whereArgs: [evaluacionId, nombreSeccion],
+      orderBy: 'id DESC',
+    );
+
+    List<Comentario> comentarios = [];
+
+    for (var comentarioMap in comentariosMap) {
+      // Obtener recursos asociados a cada comentario
+      List<Map<String, dynamic>> recursosMap = await db.query(
+        'ComentariosRecursos',
+        where: 'comentario_id = ?',
+        whereArgs: [comentarioMap['id']],
+      );
+
+      List<ComentarioRecurso> recursos =
+          recursosMap.map((map) => ComentarioRecurso.fromMap(map)).toList();
+
+      comentarios.add(Comentario.fromMap(comentarioMap, recursos));
+    }
+
+    return comentarios;
+  }
+
+  Future<void> insertarRecursoComentario(
+      int comentarioId, String tipo, String pathArchivo) async {
+    final db = await database;
+    await db.insert('ComentariosRecursos', {
+      'comentario_id': comentarioId,
+      'tipo': tipo,
+      'path_archivo': pathArchivo
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerComentariosPorSeccion(
+      int evaluacionId, String nombreSeccion) async {
+    final db = await database;
+    return await db.query(
+      'Comentarios',
+      where: 'evaluacion_id = ? AND nombre_seccion = ?',
+      whereArgs: [evaluacionId, nombreSeccion],
+      orderBy: 'fecha ASC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerRecursosPorComentario(
+      int comentarioId) async {
+    final db = await database;
+    return await db.query(
+      'ComentariosRecursos',
+      where: 'comentario_id = ?',
+      whereArgs: [comentarioId],
+    );
   }
 
   Future<List<Map<String, dynamic>>> getAccionesRecomendadasPorEvaluacion(
@@ -1186,135 +1455,171 @@ class DatabaseHelper {
     }
   }
 
-  Future<Map<String, dynamic>> obtenerDatosEvaluacion(int evaluacionId) async {
+  
+
+  Future<Map<String, dynamic>> obtenerDatosEvaluacion(
+      int evaluacionId, int userId) async {
     final db = await database;
+    
 
-    // 1. Obtener la evaluación principal
-    final List<Map<String, dynamic>> evals = await db.query(
-      'Evaluaciones',
-      where: 'id = ?',
-      whereArgs: [evaluacionId],
-      limit: 1,
-    );
+    try {
+      // 1. Obtener evaluación básica
+      final evaluacion = await getEvaluacionBasica(userId, evaluacionId);
+      if (evaluacion == null) return {};
 
-    if (evals.isEmpty) {
-      return {}; // No se encontró la evaluación
-    }
+      // 2. Obtener datos del edificio y evaluacion_edificio_id
+      final List<Map<String, dynamic>> edificioData = await db.rawQuery('''
+      SELECT e.*, ee.id as evaluacion_edificio_id
+      FROM Edificios e
+      INNER JOIN EvaluacionEdificio ee ON e.id = ee.edificio_id
+      WHERE ee.evaluacion_id = ?
+    ''', [evaluacionId]);
 
-    final evaluacion = evals.first;
+      Map<String, dynamic>? edificio;
+      int? evaluacionEdificioId;
 
-    // 2. Obtener EvaluacionEdificio asociado a esta evaluación
-    final List<Map<String, dynamic>> evalEdifList = await db.query(
-      'EvaluacionEdificio',
-      where: 'evaluacion_id = ?',
-      whereArgs: [evaluacionId],
-      limit: 1,
-    );
+      if (edificioData.isNotEmpty) {
+        // Convierte a mapa mutable
+        edificio = Map<String, dynamic>.from(edificioData.first);
+        evaluacionEdificioId = edificio['evaluacion_edificio_id'];
+      } else {
+        return {
+          'evaluacion': evaluacion
+        }; // Si no hay edificio, retornamos lo básico
+      }
 
-    Map<String, dynamic>? evaluacionEdificio;
-    Map<String, dynamic>? edificio;
-    List<Map<String, dynamic>> contacto = [];
-    Map<String, dynamic>? caracteristicasGenerales;
-    List<Map<String, dynamic>> usosPredominantes = [];
-    Map<String, dynamic>? detalleEstructura;
-    Map<String, dynamic>? danosEvaluacion;
-    Map<String, dynamic>? habitabilidad;
-    List<Map<String, dynamic>> accionesRecomendadas = [];
-    List<Map<String, dynamic>> riesgosExternos = [];
-    List<Map<String, dynamic>> evaluacionAdicional = [];
-    List<Map<String, dynamic>> elementosNoEstructurales = [];
-
-    if (evalEdifList.isNotEmpty) {
-      evaluacionEdificio = evalEdifList.first;
-      int evaluacionEdificioId = evaluacionEdificio['id'];
-      int edificioId = evaluacionEdificio['edificio_id'];
-
-      // 3. Obtener datos del Edificio
-      final List<Map<String, dynamic>> edifList = await db.query(
-        'Edificios',
-        where: 'id = ?',
-        whereArgs: [edificioId],
+      // Obtener dirección a partir del edificio_id
+      final direccionData = await db.query(
+        'Direcciones',
+        where: 'edificio_id = ?',
+        whereArgs: [edificio['id']],
         limit: 1,
       );
-      if (edifList.isNotEmpty) {
-        edificio = edifList.first;
+
+      // Construir dirección completa de forma segura
+      if (direccionData.isNotEmpty) {
+        final dir = Map<String, dynamic>.from(direccionData.first);
+        final List<String> partes = [];
+
+        final tipoVia = dir['tipo_via'] as String?;
+        final numeroVia = dir['numero_via'] as String?;
+        final apendiceVia = dir['apendice_via'] as String?;
+        final orientacion = dir['orientacion'] as String?;
+        final numeroCruce = dir['numero_cruce'] as String?;
+        final orientacionCruce = dir['orientacion_cruce'] as String?;
+        final numero = dir['numero'] as String?;
+        final complemento = dir['complemento_direccion'] as String?;
+
+        if (tipoVia != null && tipoVia.isNotEmpty) partes.add(tipoVia);
+        if (numeroVia != null && numeroVia.isNotEmpty) partes.add(numeroVia);
+        if (apendiceVia != null && apendiceVia.isNotEmpty)
+          partes.add(apendiceVia);
+        if (orientacion != null && orientacion.isNotEmpty)
+          partes.add(orientacion);
+
+        if (numeroCruce != null && numeroCruce.isNotEmpty) {
+          partes.add("#");
+          partes.add(numeroCruce);
+          if (orientacionCruce != null && orientacionCruce.isNotEmpty) {
+            partes.add(orientacionCruce);
+          }
+        }
+
+        if (numero != null && numero.isNotEmpty) {
+          partes.add("-");
+          partes.add(numero);
+        }
+
+        if (complemento != null && complemento.isNotEmpty) {
+          partes.add("($complemento)");
+        }
+
+        edificio['direccion_completa'] =
+            partes.isNotEmpty ? partes.join(" ") : "No especificada";
+      } else {
+        edificio['direccion_completa'] = "No especificada";
       }
 
-      // 4. Obtener Contacto(s) del edificio
-      contacto = await db.query(
+      // 3. Obtener contacto
+      final contactoData = await db.query(
         'Contacto',
         where: 'edificio_id = ?',
-        whereArgs: [edificioId],
+        whereArgs: [edificio['id']],
       );
+      final contacto = contactoData.isNotEmpty
+          ? Map<String, dynamic>.from(contactoData.first)
+          : null;
 
-      // 5. Características Generales
-      caracteristicasGenerales =
-          await obtenerCaracteristicasGenerales(evaluacionEdificioId);
+      // 4. Obtener demás datos
+      final caracteristicasGenerales = evaluacionEdificioId != null
+          ? await obtenerCaracteristicasGenerales(evaluacionEdificioId)
+          : null;
 
-      // 6. Usos Predominantes
-      usosPredominantes =
-          await obtenerUsosPorEvaluacionEdificio(evaluacionEdificioId);
+      final usosPredominantes = evaluacionEdificioId != null
+          ? await obtenerUsosPorEvaluacionEdificio(evaluacionEdificioId)
+          : [];
 
-      // 7. Detalle Estructura
-      detalleEstructura = await obtenerDetalleEstructura(evaluacionEdificioId);
+      // Aseguramos que los usosPredominantes sean listas mutables si se necesitan modificar luego
+      final usosPredominantesMutable =
+          usosPredominantes.map((u) => Map<String, dynamic>.from(u)).toList();
 
-      // 8. Daños Evaluacion
-      danosEvaluacion = await obtenerDaniosEvaluacion(evaluacionEdificioId);
+      final detalleEstructura = evaluacionEdificioId != null
+          ? await obtenerDetalleEstructura(evaluacionEdificioId)
+          : null;
 
-      // 9. Habitabilidad
-      Future<Map<String, dynamic>?> obtenerHabitabilidadPorEvaluacion(
-          int evaluacionId) async {
-        final db = await database;
-        List<Map<String, dynamic>> resultados = await db.rawQuery('''
-    SELECT 
-      eh.*,
-      h.descripcion as estado_habitabilidad,
-      eh.severidad_danos,
-      eh.porcentaje_afectacion,
-      eh.criterio_habitabilidad
-    FROM EvaluacionHabitabilidad eh
-    LEFT JOIN Habitabilidad h ON eh.habitabilidad_id = h.id
-    WHERE eh.evaluacion_id = ?
-  ''', [evaluacionId]);
+      final danosEvaluacion = evaluacionEdificioId != null
+          ? await obtenerDaniosEvaluacion(evaluacionEdificioId)
+          : null;
 
-        if (resultados.isNotEmpty) {
-          return resultados.first;
-        }
-        return null;
-      }
+      final habitabilidad =
+          await obtenerHabitabilidadPorEvaluacion(evaluacionId);
+      final accionesRecomendadas =
+          await obtenerAccionesPorEvaluacion(evaluacionId);
+      final riesgosExternos = await obtenerRiesgosPorEvaluacion(evaluacionId);
+      final evaluacionAdicionalData =
+          await getEvaluacionAdicionalPorEvaluacion(userId, evaluacionId);
+      final evaluacionAdicional = evaluacionAdicionalData.isNotEmpty
+          ? Map<String, dynamic>.from(evaluacionAdicionalData.first)
+          : null;
 
-      // 10. Acciones Recomendadas
-      accionesRecomendadas = await obtenerAccionesPorEvaluacion(evaluacionId);
+      final elementosNoEstructurales = evaluacionEdificioId != null
+          ? await getElementosNoEstructuralesPorEvaluacion(userId, evaluacionId)
+          : [];
 
-      // 11. Riesgos Externos
-      riesgosExternos = await obtenerRiesgosPorEvaluacion(evaluacionId);
+      // Si vas a modificar elementosNoEstructurales más adelante, también conviene convertirlos a mutable:
+      final elementosNoEstructuralesSingle = elementosNoEstructurales.isNotEmpty
+          ? Map<String, dynamic>.from(elementosNoEstructurales.first)
+          : null;
 
-      // 13. Elementos No Estructurales (si quisieras traerlos)
-      elementosNoEstructurales = await db.query(
-        'ElementosNoEstructurales',
-        where: 'evaluacion_edificio_id = ?',
-        whereArgs: [evaluacionEdificioId],
-      );
+      return {
+        'evaluacion': Map<String, dynamic>.from(evaluacion),
+        'edificio': edificio,
+        'contacto': contacto,
+        'caracteristicas_generales': caracteristicasGenerales == null
+            ? null
+            : Map<String, dynamic>.from(caracteristicasGenerales),
+        'usos_predominantes': usosPredominantesMutable,
+        'detalle_estructura': detalleEstructura == null
+            ? null
+            : Map<String, dynamic>.from(detalleEstructura),
+        'danos_evaluacion': danosEvaluacion == null
+            ? null
+            : Map<String, dynamic>.from(danosEvaluacion),
+        'habitabilidad': habitabilidad == null
+            ? null
+            : Map<String, dynamic>.from(habitabilidad),
+        'acciones_recomendadas': accionesRecomendadas
+            .map((a) => Map<String, dynamic>.from(a))
+            .toList(),
+        'riesgos_externos':
+            riesgosExternos.map((r) => Map<String, dynamic>.from(r)).toList(),
+        'evaluacion_adicional': evaluacionAdicional,
+        'elementos_no_estructurales': elementosNoEstructuralesSingle,
+      };
+    } catch (e) {
+      print('Error en obtenerDatosEvaluacion: $e');
+      return {};
     }
-
-    // Combinar todos los datos en un mapa
-    Map<String, dynamic> datos = {
-      'evaluacion': evaluacion,
-      'evaluacion_edificio': evaluacionEdificio,
-      'edificio': edificio,
-      'contacto': contacto,
-      'caracteristicas_generales': caracteristicasGenerales,
-      'usos_predominantes': usosPredominantes,
-      'detalle_estructura': detalleEstructura,
-      'danos_evaluacion': danosEvaluacion,
-      'habitabilidad': habitabilidad,
-      'acciones_recomendadas': accionesRecomendadas,
-      'riesgos_externos': riesgosExternos,
-      'evaluacion_adicional': evaluacionAdicional,
-      'elementos_no_estructurales': elementosNoEstructurales,
-    };
-
-    return datos;
   }
 
   Future<int?> obtenerIdUsoPorDescripcion(String descripcion) async {
@@ -1330,6 +1635,48 @@ class DatabaseHelper {
       return resultados.first['id'] as int;
     }
     return null;
+  }
+
+  // Modificar método para obtener último ID de evaluación
+  Future<int> obtenerUltimoIdEvaluacion() async {
+    final db = await database;
+    try {
+      final List<Map<String, dynamic>> result = await db.rawQuery('''
+        SELECT id FROM Evaluaciones 
+        ORDER BY id DESC 
+        LIMIT 1
+      ''');
+
+      // Si no hay resultados, retornar 0 para que el nuevo ID sea 1
+      if (result.isEmpty) {
+        return 0;
+      }
+
+      // Asegurar que el valor no sea null
+      final int ultimoId = result.first['id'] ?? 0;
+      return ultimoId;
+    } catch (e) {
+      print('Error al obtener último ID: $e');
+      return 0; // Valor por defecto en caso de error
+    }
+  }
+
+  // Método para insertar nueva evaluación con ID incremental
+  Future<int> insertarNuevaEvaluacion(Map<String, dynamic> evaluacion) async {
+    final db = await database;
+    try {
+      final ultimoId = await obtenerUltimoIdEvaluacion();
+      evaluacion['id'] = ultimoId + 1; // Asignar nuevo ID
+
+      return await db.insert(
+        'Evaluaciones',
+        evaluacion,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      print('Error al insertar evaluación: $e');
+      rethrow;
+    }
   }
 
 // Agregar este método a la clase DatabaseHelper
@@ -2195,11 +2542,13 @@ class DatabaseHelper {
   Future<Map<String, dynamic>?> obtenerDaniosEvaluacion(
       int evaluacionEdificioId) async {
     final db = await database;
-    List<Map<String, dynamic>> resultados = await db.query(
-      'DañosEvaluacion',
-      where: 'evaluacion_edificio_id = ?',
-      whereArgs: [evaluacionEdificioId],
-    );
+    final List<Map<String, dynamic>> resultados = await db.rawQuery('''
+    SELECT d.*, n.severidad_danos, n.categoria as categoria_dano
+    FROM DañosEvaluacion d
+    JOIN NivelDaño n ON d.nivel_dano_id = n.id
+    WHERE d.evaluacion_edificio_id = ?
+  ''', [evaluacionEdificioId]);
+
     if (resultados.isNotEmpty) {
       return resultados.first;
     }
@@ -2294,13 +2643,13 @@ class DatabaseHelper {
   ''', [evaluacionId]);
 
     if (resultados.isNotEmpty) {
-      // Agregar información adicional de la evaluación de daños
-      final evaluacionDanos = await obtenerDaniosEvaluacion(evaluacionId);
+      final evaluacionDanos =
+          await obtenerDaniosEvaluacion(resultados.first['evaluacion_id']);
       return {
         ...resultados.first,
         'severidad_danos': evaluacionDanos?['severidad_danos'],
         'porcentaje_afectacion': evaluacionDanos?['porcentaje_afectacion'],
-        'estado': resultados.first['estado_habitabilidad'],
+        'estado_habitabilidad': resultados.first['estado_habitabilidad'],
       };
     }
     return null;
@@ -2646,49 +2995,54 @@ class DatabaseHelper {
   Future<int> insertarIdentificacionEdificacion({
     required int evaluacionId,
     required Map<String, dynamic> datosGenerales,
+    required Map<String, dynamic> datosDireccion,
     required Map<String, dynamic> datosCatastrales,
     required Map<String, dynamic> datosContacto,
   }) async {
     final db = await database;
 
-    /// 1. Insertar edificio - Corregir nombre de columna
-    final edificioId = await db.insert('Edificios', {
-      'nombre_edificacion': datosGenerales['nombre_edificacion'],
-      'municipio': datosGenerales['municipio'],
-      'comuna': datosGenerales['comuna'], // Agregar comuna
-      'barrio_vereda': datosGenerales['barrio_vereda'],
-      'tipo_propiedad': datosGenerales['tipo_propiedad'],
-      'departamento': datosGenerales['departamento'],
-      'tipo_via': datosGenerales['tipo_via'],
-      'numero_via': datosGenerales['numero_via'],
-      'apendice_via': datosGenerales['apendice_via'],
-      'orientacion': datosGenerales['orientacion'],
-      'numero_cruce': datosGenerales['numero_cruce'],
-      'orientacion_cruce': datosGenerales['orientacion_cruce'],
-      'complemento_direccion': datosGenerales['complemento_direccion'],
-    });
+    try {
+      // Insertar Edificio (solo datos generales)
+      // datosGenerales debe contener: nombre_edificacion, municipio, comuna, barrio_vereda, tipo_propiedad, departamento
+      final edificioId = await db.insert('Edificios', datosGenerales);
 
-    // 2. Insertar evaluación edificio
-    final evaluacionEdificioId = await db.insert('EvaluacionEdificio', {
-      'evaluacion_id': evaluacionId,
-      'edificio_id': edificioId,
-      'codigo_medellin': datosCatastrales['codigo_medellin'],
-      'codigo_area_metropolitana':
-          datosCatastrales['codigo_area_metropolitana'],
-      'latitud': datosCatastrales['latitud'],
-      'longitud': datosCatastrales['longitud'],
-    });
+      // Insertar Dirección
+      // datosDireccion: tipo_via, numero_via, apendice_via, orientacion, numero_cruce, orientacion_cruce, numero, complemento_direccion
+      final direccionData = {
+        'edificio_id': edificioId,
+        ...datosDireccion,
+      };
+      await db.insert('Direcciones', direccionData);
 
-    // 3. Insertar contacto
-    await db.insert('Contacto', {
-      'edificio_id': edificioId,
-      'nombre': datosContacto['nombre'],
-      'telefono': datosContacto['telefono'],
-      'correo_electronico': datosContacto['correo'],
-      'tipo_persona': datosContacto['tipo_persona'],
-    });
+      // Insertar Contacto
+      // datosContacto: nombre, telefono, correo, tipo_persona
+      final contactoData = {
+        'edificio_id': edificioId,
+        'nombre': datosContacto['nombre'],
+        'telefono': datosContacto['telefono'],
+        'correo_electronico': datosContacto['correo'],
+        'tipo_persona': datosContacto['tipo_persona'],
+      };
+      await db.insert('Contacto', contactoData);
 
-    return evaluacionEdificioId;
+      // Insertar EvaluacionEdificio
+      // datosCatastrales: codigo_medellin, codigo_area_metropolitana, latitud, longitud
+      final evaluacionEdificioData = {
+        'evaluacion_id': evaluacionId,
+        'edificio_id': edificioId,
+        'codigo_medellin': datosCatastrales['codigo_medellin'],
+        'codigo_area_metropolitana':
+            datosCatastrales['codigo_area_metropolitana'],
+        'latitud': datosCatastrales['latitud'],
+        'longitud': datosCatastrales['longitud'],
+      };
+      await db.insert('EvaluacionEdificio', evaluacionEdificioData);
+
+      return edificioId;
+    } catch (e) {
+      print('Error en insertarIdentificacionEdificacion: $e');
+      rethrow;
+    }
   }
 
   /// Inserta una evaluación con firma utilizando datos separados.

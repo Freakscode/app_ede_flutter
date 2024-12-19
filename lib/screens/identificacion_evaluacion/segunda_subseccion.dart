@@ -4,12 +4,17 @@ class SegundaSubseccion extends StatefulWidget {
   final Future<void> Function(String, int) onEventoSeleccionado;
   final VoidCallback onContinue;
   final int? selectedEventoId;
+  final Function(int?, String?) onTipoEventoActualizado;
+  final TextEditingController otroEvento;
 
   const SegundaSubseccion({
     super.key,
     required this.onEventoSeleccionado,
     required this.onContinue,
     required this.selectedEventoId,
+    required this.onTipoEventoActualizado,
+    required this.otroEvento,
+
   });
 
   @override
@@ -104,6 +109,10 @@ class _SegundaSubseccionState extends State<SegundaSubseccion> {
                     } else {
                       setState(() => _mostrarCampoOtro = false);
                     }
+                    widget.onTipoEventoActualizado(
+                      evento['tipoEventoId'],
+                      evento['tipoEventoId'] == 8 ? _otroEventoController.text : null
+                    );
                     await widget.onEventoSeleccionado(
                       evento['tipoEventoId'] == 8 ? _otroEventoController.text : evento['label'],
                       evento['tipoEventoId']

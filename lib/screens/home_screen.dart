@@ -5,8 +5,14 @@ import 'identificacion_evaluacion/identificacion_evaluacion_screen.dart';
 class HomeScreen extends StatefulWidget {
   final String userName;
   final int userId; // Añadido userId
+  final int? newEvaluationId; // Añadido evaluationId opcional
 
-  const HomeScreen({super.key, required this.userName, required this.userId});
+  const HomeScreen({
+    super.key,
+    required this.userName,
+    required this.userId,
+    this.newEvaluationId, // Añadido en el constructor
+  });
 
   @override
   // ignore: library_private_types_in_public_api
@@ -18,11 +24,16 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _evaluaciones = [];
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController(); // Añadido
 
   @override
   void initState() {
     super.initState();
-    _cargarEvaluaciones();
+    _cargarEvaluaciones().then((_) {
+      if (widget.newEvaluationId != null) {
+        _scrollToEvaluation(widget.newEvaluationId!);
+      }
+    });
   }
 
   @override
@@ -67,6 +78,22 @@ class _HomeScreenState extends State<HomeScreen> {
   void _buscarEvaluaciones() {
     String eventoId = _searchController.text.trim();
     _cargarEvaluaciones(eventoId: eventoId);
+  }
+
+  Future<void> _scrollToEvaluation(int evaluationId) async {
+    // Esperar a que el frame se haya renderizado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      int index = _evaluaciones.indexWhere((eval) => eval['id'] == evaluationId);
+      if (index != -1) {
+        // Calcular la posición aproximada (asumiendo altura fija por item)
+        double position = index * 150.0; // Ajusta según la altura de tus cards
+        _scrollController.animateTo(
+          position,
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
@@ -141,7 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       suffixIcon: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFAD502), // Color amarillo específico
+                          color: const Color(
+                              0xFFFAD502), // Color amarillo específico
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -160,15 +188,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 // Nuevo botón para añadir una evaluación
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => IdentificacionEvaluacionScreen(userId: widget.userId),
-                      ),
-                    );
+                  onPressed: () async {
+                    try {
+                      final nuevaEvaluacionId =
+                          await _dbHelper.obtenerUltimoIdEvaluacion() + 1;
+
+                      if (!mounted) return;
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => IdentificacionEvaluacionScreen(
+                            userId: widget.userId,
+                            evaluacionId: nuevaEvaluacionId,
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content:
+                                Text('Error al crear nueva evaluación: $e')),
+                      );
+                    }
                   },
-                  child: const Text('Añadir Nueva Evaluación'),
+                  child: const Text('Añadir Evaluación'),
                 ),
                 const SizedBox(height: 20),
                 // Lista de evaluaciones
@@ -183,6 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         )
                       : ListView.builder(
+                          controller: _scrollController, // Asignar controlador
                           itemCount: _evaluaciones.length,
                           itemBuilder: (context, index) {
                             final eval = _evaluaciones[index];
@@ -215,16 +261,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Text('Hora: ${eval['hora']}'),
                                     const SizedBox(height: 16),
                                     Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.end,
+                                      mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         TextButton.icon(
                                           onPressed: () {
                                             // Acción para ver evaluación
                                           },
-                                          icon: const Icon(Icons.remove_red_eye),
-                                          label:
-                                              const Text('Ver evaluación'),
+                                          icon:
+                                              const Icon(Icons.remove_red_eye),
+                                          label: const Text('Ver evaluación'),
                                         ),
                                         const SizedBox(width: 8),
                                         TextButton.icon(
@@ -232,8 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             // Acción para editar registro
                                           },
                                           icon: const Icon(Icons.edit),
-                                          label:
-                                              const Text('Editar Registro'),
+                                          label: const Text('Editar Registro'),
                                         ),
                                       ],
                                     ),
@@ -274,6 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose(); // Liberar el controlador
     super.dispose();
   }
 }

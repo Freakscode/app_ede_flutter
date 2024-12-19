@@ -61,33 +61,84 @@ class _CaracteristicasGeneralesScreenState
   }
 
   Future<bool> _guardar() async {
-    try {
-      await DatabaseHelper().insertarCaracteristicasGenerales({
-        'evaluacion_edificio_id': widget.evaluacionEdificioId,
-        'numero_pisos': int.tryParse(_numeroPisosController.text),
-        'numero_sotanos': int.tryParse(_numeroSotanosController.text),
-        'frente': double.tryParse(_frenteController.text),
-        'fondo': double.tryParse(_fondoController.text),
-        'unidades_residenciales': int.tryParse(_unidadesResidencialesController.text),
-        'unidades_no_habitadas': int.tryParse(_unidadesNoHabitadasController.text),
-        'unidades_comerciales': int.tryParse(_unidadesComercialesController.text),
-        'ocupantes': int.tryParse(_ocupantesController.text),
-        'acceso': _acceso,
-        'muertos': _muertos, 
-        'heridos': _heridos, 
-        'fecha_construccion': _fechaConstruccion,
-      });
-      setState(() => _datosGuardados = true);
+    // 1. Validar campos requeridos
+    if (!_validarCamposRequeridos()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Datos guardados correctamente')),
-      );
-      return true;
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al guardar los datos')),
+        const SnackBar(content: Text('Complete todos los campos requeridos')),
       );
       return false;
     }
+
+    try {
+      // 2. Preparar datos con validación
+      final datos = {
+        'evaluacion_edificio_id': widget.evaluacionEdificioId,
+        'numero_pisos': _validarNumero(_numeroPisosController.text),
+        'numero_sotanos': _validarNumero(_numeroSotanosController.text),
+        'frente': _validarDecimal(_frenteController.text),
+        'fondo': _validarDecimal(_fondoController.text),
+        'unidades_residenciales':
+            _validarNumero(_unidadesResidencialesController.text),
+        'unidades_no_habitadas':
+            _validarNumero(_unidadesNoHabitadasController.text),
+        'unidades_comerciales':
+            _validarNumero(_unidadesComercialesController.text),
+        'ocupantes': _validarNumero(_ocupantesController.text),
+        'acceso': _acceso ?? 'No especificado',
+        'muertos': _muertos,
+        'heridos': _heridos,
+        'fecha_construccion': _fechaConstruccion ?? 'No especificada',
+      };
+
+      // 3. Guardar datos
+      await DatabaseHelper().insertarCaracteristicasGenerales(datos);
+
+      // 4. Actualizar estado y mostrar mensaje
+      setState(() => _datosGuardados = true);
+      if (!mounted) return true;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Datos guardados correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      return true;
+    } catch (e) {
+      // 5. Manejo detallado de errores
+      print('Error al guardar: $e'); // Para debug
+      if (!mounted) return false;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al guardar: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+  }
+
+// Métodos auxiliares de validación
+  bool _validarCamposRequeridos() {
+    return _numeroPisosController.text.isNotEmpty &&
+        _numeroSotanosController.text.isNotEmpty &&
+        _frenteController.text.isNotEmpty &&
+        _fondoController.text.isNotEmpty;
+  }
+
+  int? _validarNumero(String valor) {
+    if (valor.isEmpty) return null;
+    final numero = int.tryParse(valor);
+    if (numero == null || numero < 0) return null;
+    return numero;
+  }
+
+  double? _validarDecimal(String valor) {
+    if (valor.isEmpty) return null;
+    final numero = double.tryParse(valor);
+    if (numero == null || numero < 0) return null;
+    return numero;
   }
 
   @override

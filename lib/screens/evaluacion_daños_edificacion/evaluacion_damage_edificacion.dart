@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../utils/database_helper.dart';
-import '../damage_assessment/damage_assessment_screen.dart';
+import '../alcance_evaluacion/alcance_evaluacion_screen.dart'; // Importar la siguiente pantalla
 import '../../widgets/floating_navigation_menu.dart'; // Importar el menú flotante
 
 class EvaluacionDamagesEdificacionScreen extends StatefulWidget {
@@ -130,7 +130,7 @@ class _EvaluacionDamagesEdificacionScreenState
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DamageAssessmentScreen(
+        builder: (context) => AlcanceEvaluacionScreen(
           evaluacionId: widget.evaluacionId,
           evaluacionEdificioId: widget.evaluacionEdificioId,
           userId: widget.userId,
@@ -266,9 +266,21 @@ class _EvaluacionDamagesEdificacionScreenState
           _buildSubseccionElementos(),
         ],
       ),
-      floatingActionButton: FloatingSectionsMenu(
-        currentSection: _tabController.index + 1, // Convertir a 1-indexado
-        onSectionSelected: _onSectionSelected,
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingSectionsMenu(
+            currentSection: _tabController.index + 1,
+            onSectionSelected: _onSectionSelected,
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton.extended(
+            onPressed: _guardarDatos,
+            label: const Text('Guardar y Continuar'),
+            icon: const Icon(Icons.save),
+            backgroundColor: const Color(0xFF002855),
+          ),
+        ],
       ),
     );
   }

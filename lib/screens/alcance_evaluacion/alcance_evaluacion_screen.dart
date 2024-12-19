@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/database_helper.dart'; // Asegúrate de que la ruta sea correcta
-import '../evaluacion_daños_edificacion/evaluacion_damage_edificacion.dart';
+import '../damage_assessment/damage_assessment_screen.dart';
 
 class AlcanceEvaluacionScreen extends StatefulWidget {
   final int evaluacionId;
@@ -55,7 +55,7 @@ class _AlcanceEvaluacionScreenState extends State<AlcanceEvaluacionScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => EvaluacionDamagesEdificacionScreen(
+          builder: (context) => DamageAssessmentScreen(
             evaluacionId: widget.evaluacionId,
             evaluacionEdificioId: widget.evaluacionEdificioId,
             userId: widget.userId,

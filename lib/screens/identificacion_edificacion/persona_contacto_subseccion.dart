@@ -18,6 +18,7 @@ class PersonaContactoSubseccion extends StatefulWidget {
   final TextEditingController longitudController;
   final int evaluacionId;
   final int userId;
+  final Map<String, dynamic> datosDireccion;
 
   const PersonaContactoSubseccion({
     super.key,
@@ -36,6 +37,7 @@ class PersonaContactoSubseccion extends StatefulWidget {
     required this.longitudController,
     required this.evaluacionId,
     required this.userId,
+    required this.datosDireccion,
   });
 
   @override
@@ -132,6 +134,7 @@ class _PersonaContactoSubseccionState extends State<PersonaContactoSubseccion> {
 
       final evaluacionEdificioId = await DatabaseHelper().insertarIdentificacionEdificacion(
         evaluacionId: widget.evaluacionId,
+        datosDireccion: widget.datosDireccion,
         datosGenerales: datosGenerales,
         datosCatastrales: datosCatastrales,
         datosContacto: datosContacto,

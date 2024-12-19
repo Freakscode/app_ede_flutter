@@ -301,10 +301,28 @@ Color _obtenerColorSeveridad(String severidad, String porcentajeAfectacion) {
     );
   }
 
-  void _guardarYContinuar() {
-    // Guardar datos si es necesario
+  void _guardarYContinuar() async {
+  try {
+    if (_porcentajeSeleccionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor seleccione un porcentaje de afectación'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Guardar datos en EvaluacionEdificio
+    await DatabaseHelper().actualizarDanosEvaluacionEdificio(
+      widget.evaluacionEdificioId,
+      _porcentajeSeleccionado!,
+      _resultadoSeveridad,
+    );
 
     // Navegar a HabitabilidadScreen
+    if (!mounted) return;
+    
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -317,7 +335,18 @@ Color _obtenerColorSeveridad(String severidad, String porcentajeAfectacion) {
         ),
       ),
     );
+
+  } catch (e) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al guardar: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
